@@ -11,6 +11,7 @@ import {
   UserPlus, Clock, BarChart3,
 } from 'lucide-react'
 import type { WebinarWithTasks } from '@/types/webinar.types'
+import type { ZonalData } from '@/components/dashboard/ZonalSummaryChart'
 
 export const metadata = { title: 'Dashboard — ROAT' }
 
@@ -90,7 +91,7 @@ export default async function DashboardPage() {
   // Stacked bar: ALL activity types as keys per zone
   const activityTypeEntries = Object.entries(ACTIVITY_TYPE_LABELS)
   const zoneChartData = Object.entries(ZONAL_OFFICE_LABELS).map(([key, label]) => {
-    const row: Record<string, number | string> = { zone: label }
+    const row: ZonalData = { zone: label }
     for (const [typeKey] of activityTypeEntries) {
       row[typeKey] = byZone[key]?.[typeKey] ?? 0
     }

@@ -146,6 +146,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
           deleted_at?: string | null
+          pending_alert_sent_at?: string | null
         }
         Relationships: []
       }

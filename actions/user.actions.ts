@@ -164,7 +164,7 @@ export async function updateOwnDisplayName(fullName: string) {
   if (!user) return { error: 'Not authenticated' }
 
   const parsed = z.string().min(1, 'Name is required').max(200).safeParse(fullName)
-  if (!parsed.success) return { error: parsed.error.errors[0].message }
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const { error } = await supabase
     .from('profiles')
@@ -189,7 +189,7 @@ export async function changeOwnPassword(newPassword: string) {
     .string()
     .min(10, 'Password must be at least 10 characters')
     .safeParse(newPassword)
-  if (!parsed.success) return { error: parsed.error.errors[0].message }
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
 
   const { error } = await supabase.auth.updateUser({ password: parsed.data })
   if (error) return { error: error.message }

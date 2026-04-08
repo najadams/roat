@@ -231,7 +231,14 @@ export async function ReportsContent({ profile, searchParams }: ReportsContentPr
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
-              <ZonalSummaryChart data={zoneChartData} />
+              <ZonalSummaryChart
+                data={zoneChartData}
+                activityTypes={[
+                  { key: 'new_registration', label: 'New Registration' },
+                  { key: 'site_visit', label: 'Site Visit' },
+                  { key: 'stakeholder_engagement', label: 'Stakeholder Engagement' },
+                ]}
+              />
             </CardContent>
           </Card>
         )}

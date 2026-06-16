@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { ZoneSelector } from '@/components/shared/ZoneSelector'
 import type { Activity } from '@/types/activity.types'
 
 interface ActivityFormProps {
@@ -41,7 +42,7 @@ const SECTORS = [
   'Construction', 'Retail - Trading', 'Real Estate', 'Other',
 ]
 
-export function ActivityForm({ activity, isAdmin = true }: ActivityFormProps) {
+export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
   const router = useRouter()
   const isEditing = !!activity
   const fieldsLocked = isEditing && !isAdmin
@@ -57,6 +58,7 @@ export function ActivityForm({ activity, isAdmin = true }: ActivityFormProps) {
     defaultValues: activity
       ? {
           activity_type: activity.activity_type as ActivityFormData['activity_type'],
+          zonal_office: activity.zonal_office as ActivityFormData['zonal_office'],
           date: activity.date,
           company_name: activity.company_name,
           location: activity.location,
@@ -72,6 +74,7 @@ export function ActivityForm({ activity, isAdmin = true }: ActivityFormProps) {
 
   const selectedType = watch('activity_type')
   const selectedStatus = watch('status')
+  const selectedZone = watch('zonal_office')
 
   async function onSubmit(data: ActivityFormData) {
     const result = isEditing
@@ -139,6 +142,33 @@ export function ActivityForm({ activity, isAdmin = true }: ActivityFormProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* Zonal Office — admins only (officers inherit their own zone) */}
+      {isAdmin && (
+        <Card className="border-slate-100 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base font-semibold text-slate-900 tracking-tight">
+              Zonal Office
+            </CardTitle>
+            <CardDescription className="text-sm text-slate-500">
+              Select the zone this activity belongs to.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="max-w-xs">
+              <ZoneSelector
+                value={selectedZone ?? ''}
+                onChange={val =>
+                  setValue('zonal_office', val as ActivityFormData['zonal_office'])
+                }
+              />
+            </div>
+            {errors.zonal_office && (
+              <p className="mt-2 text-xs text-red-500">{errors.zonal_office.message}</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Core Details */}
       <Card className="border-slate-100 shadow-sm">

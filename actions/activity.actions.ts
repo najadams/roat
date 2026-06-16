@@ -19,18 +19,28 @@ export async function createActivity(formData: unknown) {
     .single()
 
   if (!profile) return { error: 'Profile not found' }
-  if (!profile.zonal_office && profile.role === 'zonal_officer') {
-    return { error: 'No zonal office assigned to your account' }
-  }
 
   const parsed = activitySchema.safeParse(formData)
   if (!parsed.success) {
     return { error: parsed.error.flatten().fieldErrors }
   }
 
+  // Admins choose the zone on the form; officers always use their assigned zone.
+  const { zonal_office: formZone, ...rest } = parsed.data
+  const isAdmin = profile.role === 'regional_admin'
+  const zone = isAdmin ? formZone : profile.zonal_office
+
+  if (!zone) {
+    return {
+      error: isAdmin
+        ? 'Please select a zonal office'
+        : 'No zonal office assigned to your account',
+    }
+  }
+
   const { error } = await supabase.from('activities').insert({
-    ...parsed.data,
-    zonal_office: profile.zonal_office!,
+    ...rest,
+    zonal_office: zone,
     created_by: user.id,
   })
 
@@ -71,10 +81,11 @@ export async function updateActivity(id: string, formData: unknown) {
     return { error: parsed.error.flatten().fieldErrors }
   }
 
+  const { zonal_office: formZone, ...rest } = parsed.data
   const updatePayload = isAdmin
-    ? { ...parsed.data, updated_by: user.id }
+    ? { ...rest, ...(formZone ? { zonal_office: formZone } : {}), updated_by: user.id }
     : {
-        ...parsed.data,
+        ...rest,
         activity_type: current.activity_type,
         date: current.date,
         updated_by: user.id,

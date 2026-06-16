@@ -38,7 +38,7 @@ export default async function NewActivityPage() {
           Record a new zonal activity for your office.
         </p>
       </div>
-      <ActivityForm />
+      <ActivityForm isAdmin={profile?.role === 'regional_admin'} />
     </div>
   )
 }

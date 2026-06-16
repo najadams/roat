@@ -1,5 +1,14 @@
 import { z } from 'zod'
-import type { ActivityType } from '@/types/database.types'
+import type { ActivityType, ZonalOffice } from '@/types/database.types'
+
+export const zonalOffices: [ZonalOffice, ...ZonalOffice[]] = [
+  'kumasi',
+  'tamale',
+  'takoradi',
+  'techiman',
+  'ho',
+  'koforidua',
+]
 
 export const activityTypes: [ActivityType, ...ActivityType[]] = [
   'investor_enquiry',
@@ -20,6 +29,8 @@ export const activityTypes: [ActivityType, ...ActivityType[]] = [
 export const activitySchema = z.object({
   // Zod v4: error params use 'error' instead of 'required_error'
   activity_type: z.enum(activityTypes, 'Activity type is required'),
+  // Only supplied by regional admins (officers inherit their own zone server-side)
+  zonal_office: z.enum(zonalOffices).optional(),
   date: z.string().min(1, 'Date is required'),
   company_name: z.string().min(1, 'Company name is required').max(200),
   location: z.string().min(1, 'Location is required').max(200),

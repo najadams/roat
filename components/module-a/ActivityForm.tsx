@@ -67,9 +67,17 @@ export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
           sector: activity.sector ?? '',
           detail: activity.detail ?? '',
           action_required: activity.action_required ?? '',
+          investment_amount: activity.investment_amount ?? '',
+          investment_currency: activity.investment_currency ?? 'USD',
+          jobs_created: activity.jobs_created ?? '',
           status: activity.status as ActivityFormData['status'],
         }
-      : { status: 'pending' },
+      : {
+          status: 'pending',
+          investment_currency: 'USD',
+          // Head office (admins) defaults to the Accra region
+          ...(isAdmin ? { zonal_office: 'accra' as ActivityFormData['zonal_office'] } : {}),
+        },
   })
 
   const selectedType = watch('activity_type')
@@ -276,6 +284,74 @@ export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
               />
               {errors.email && (
                 <p className="text-xs text-red-500">{errors.email.message}</p>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Investment Outcome */}
+      <Card className="border-slate-100 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-base font-semibold text-slate-900 tracking-tight">
+            Investment Outcome
+          </CardTitle>
+          <CardDescription className="text-sm text-slate-500">
+            Optional — record the investment value and jobs linked to this activity.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <div className="space-y-2">
+              <Label htmlFor="investment_amount" className="text-sm font-medium text-slate-700">
+                Investment Value
+              </Label>
+              <Input
+                id="investment_amount"
+                type="number"
+                min="0"
+                step="any"
+                {...register('investment_amount')}
+                placeholder="0.00"
+                className="h-10 text-sm border-slate-200"
+              />
+              {errors.investment_amount && (
+                <p className="text-xs text-red-500">{errors.investment_amount.message}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="investment_currency" className="text-sm font-medium text-slate-700">
+                Currency
+              </Label>
+              <Select
+                value={watch('investment_currency')}
+                onValueChange={val => setValue('investment_currency', val)}
+              >
+                <SelectTrigger className="h-10 text-sm border-slate-200">
+                  <SelectValue placeholder="Currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  {['USD', 'GHS', 'EUR', 'GBP'].map(c => (
+                    <SelectItem key={c} value={c} className="text-sm">{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="jobs_created" className="text-sm font-medium text-slate-700">
+                Jobs Created
+              </Label>
+              <Input
+                id="jobs_created"
+                type="number"
+                min="0"
+                step="1"
+                {...register('jobs_created')}
+                placeholder="0"
+                className="h-10 text-sm border-slate-200"
+              />
+              {errors.jobs_created && (
+                <p className="text-xs text-red-500">{errors.jobs_created.message}</p>
               )}
             </div>
           </div>

@@ -22,6 +22,9 @@ export function exportToExcel(activities: Activity[], filename = 'argus-report')
     Sector: a.sector ?? '',
     Detail: a.detail ?? '',
     'Action Required': a.action_required ?? '',
+    'Investment Value': a.investment_amount ?? '',
+    Currency: a.investment_currency ?? '',
+    'Jobs Created': a.jobs_created ?? '',
     Status: a.status.replace(/_/g, ' '),
   }))
 
@@ -85,7 +88,7 @@ export function exportToPDF(
   // Main data table with all 11 columns
   autoTable(doc, {
     startY: summaryEndY + 8,
-    head: [['Date', 'Activity Type', 'Zone', 'Company', 'Location', 'Tel', 'Email', 'Sector', 'Detail', 'Action Required', 'Status']],
+    head: [['Date', 'Activity Type', 'Zone', 'Company', 'Location', 'Tel', 'Email', 'Sector', 'Detail', 'Action Required', 'Investment', 'Cur', 'Jobs', 'Status']],
     body: activities.map(a => [
       formatDateStr(a.date),
       ACTIVITY_TYPE_LABELS[a.activity_type] ?? a.activity_type,
@@ -97,6 +100,9 @@ export function exportToPDF(
       a.sector ?? '',
       a.detail ?? '',
       a.action_required ?? '',
+      a.investment_amount != null ? a.investment_amount.toLocaleString('en-GB') : '',
+      a.investment_currency ?? '',
+      a.jobs_created != null ? String(a.jobs_created) : '',
       a.status.replace(/_/g, ' '),
     ]),
     headStyles: {
@@ -109,17 +115,20 @@ export function exportToPDF(
     alternateRowStyles: { fillColor: [248, 250, 252] },
     margin: { left: 14, right: 14 },
     columnStyles: {
-      0: { cellWidth: 18 },
-      1: { cellWidth: 32 },
-      2: { cellWidth: 18 },
-      3: { cellWidth: 28 },
-      4: { cellWidth: 22 },
-      5: { cellWidth: 20 },
-      6: { cellWidth: 28 },
-      7: { cellWidth: 16 },
-      8: { cellWidth: 28 },
-      9: { cellWidth: 28 },
-      10: { cellWidth: 16 },
+      0: { cellWidth: 16 },   // Date
+      1: { cellWidth: 28 },   // Activity Type
+      2: { cellWidth: 14 },   // Zone
+      3: { cellWidth: 26 },   // Company
+      4: { cellWidth: 20 },   // Location
+      5: { cellWidth: 18 },   // Tel
+      6: { cellWidth: 26 },   // Email
+      7: { cellWidth: 14 },   // Sector
+      8: { cellWidth: 24 },   // Detail
+      9: { cellWidth: 24 },   // Action Required
+      10: { cellWidth: 18, halign: 'right' }, // Investment
+      11: { cellWidth: 10 },  // Currency
+      12: { cellWidth: 10, halign: 'right' }, // Jobs
+      13: { cellWidth: 14 },  // Status
     },
   })
 

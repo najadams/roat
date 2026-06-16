@@ -22,7 +22,7 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export type ZonalOffice = 'kumasi' | 'tamale' | 'takoradi' | 'techiman' | 'ho' | 'koforidua'
+export type ZonalOffice = 'accra' | 'kumasi' | 'tamale' | 'takoradi' | 'techiman' | 'ho' | 'koforidua'
 export type UserRole = 'zonal_officer' | 'regional_admin' | 'viewer'
 export type ActivityType =
   | 'new_registration'
@@ -107,6 +107,9 @@ export interface Database {
           updated_at: string
           deleted_at: string | null
           pending_alert_sent_at: string | null
+          investment_amount: number | null
+          investment_currency: string | null
+          jobs_created: number | null
         }
         Insert: {
           id?: string
@@ -127,6 +130,9 @@ export interface Database {
           updated_at?: string
           deleted_at?: string | null
           pending_alert_sent_at?: string | null
+          investment_amount?: number | null
+          investment_currency?: string | null
+          jobs_created?: number | null
         }
         Update: {
           id?: string
@@ -147,6 +153,9 @@ export interface Database {
           updated_at?: string
           deleted_at?: string | null
           pending_alert_sent_at?: string | null
+          investment_amount?: number | null
+          investment_currency?: string | null
+          jobs_created?: number | null
         }
         Relationships: []
       }

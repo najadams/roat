@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { ActivityType, ZonalOffice } from '@/types/database.types'
 
 export const zonalOffices: [ZonalOffice, ...ZonalOffice[]] = [
+  'accra',
   'kumasi',
   'tamale',
   'takoradi',
@@ -39,6 +40,16 @@ export const activitySchema = z.object({
   sector: z.string().optional(),
   detail: z.string().optional(),
   action_required: z.string().optional(),
+  // Investment outcomes (optional) — power the impact reporting
+  investment_amount: z.preprocess(
+    v => (v === '' || v === null || v === undefined ? undefined : Number(v)),
+    z.number('Must be a number').nonnegative('Must be 0 or more').optional()
+  ),
+  investment_currency: z.string().optional(),
+  jobs_created: z.preprocess(
+    v => (v === '' || v === null || v === undefined ? undefined : Number(v)),
+    z.number('Must be a number').int('Must be a whole number').nonnegative('Must be 0 or more').optional()
+  ),
   status: z
     .enum(['pending', 'in_progress', 'completed', 'cancelled'] as const)
     .default('pending'),

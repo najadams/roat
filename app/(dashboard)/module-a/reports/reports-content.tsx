@@ -45,7 +45,7 @@ export async function ReportsContent({ profile, searchParams }: ReportsContentPr
 
   let query = supabase
     .from('activities')
-    .select('activity_type, zonal_office, status, date')
+    .select('activity_type, zonal_office, status, date, investment_amount, investment_currency, jobs_created')
     .is('deleted_at', null)
     .neq('status', 'cancelled')
     .gte('date', fromDate)
@@ -90,6 +90,19 @@ export async function ReportsContent({ profile, searchParams }: ReportsContentPr
   const total = activities?.length ?? 0
   const completed = activities?.filter(a => a.status === 'completed').length ?? 0
   const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0
+
+  // ── Investment impact ──────────────────────────────────────────────────────
+  // Sum investment per currency (mixing currencies in one total would mislead)
+  const investmentByCurrency: Record<string, number> = {}
+  let totalJobs = 0
+  for (const a of activities ?? []) {
+    if (a.investment_amount) {
+      const cur = a.investment_currency ?? 'USD'
+      investmentByCurrency[cur] = (investmentByCurrency[cur] ?? 0) + a.investment_amount
+    }
+    totalJobs += a.jobs_created ?? 0
+  }
+  const investmentEntries = Object.entries(investmentByCurrency).sort((a, b) => b[1] - a[1])
 
   const isAdmin = profile?.role === 'regional_admin'
 
@@ -177,6 +190,50 @@ export async function ReportsContent({ profile, searchParams }: ReportsContentPr
           </CardContent>
         </Card>
       </div>
+
+      {/* Investment Impact */}
+      <Card className="border-slate-100 shadow-sm">
+        <CardHeader className="pb-2 pt-5 px-5">
+          <CardTitle className="text-sm font-semibold text-slate-900 tracking-tight">
+            Investment Impact
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-5 pb-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="rounded-lg border border-slate-100 p-4">
+              <p className="text-xs font-semibold tracking-widest uppercase text-slate-400">
+                Total Investment Value
+              </p>
+              {investmentEntries.length > 0 ? (
+                <div className="mt-2 space-y-0.5">
+                  {investmentEntries.map(([cur, amount]) => (
+                    <p key={cur} className="text-2xl font-semibold text-slate-900">
+                      {new Intl.NumberFormat('en-GB', {
+                        style: 'currency',
+                        currency: cur,
+                        maximumFractionDigits: 0,
+                      }).format(amount)}
+                    </p>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-2 text-2xl font-semibold text-slate-300">—</p>
+              )}
+            </div>
+            <div className="rounded-lg border border-slate-100 p-4">
+              <p className="text-xs font-semibold tracking-widest uppercase text-slate-400">
+                Jobs Created
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-emerald-600">
+                {totalJobs.toLocaleString('en-GB')}
+              </p>
+            </div>
+          </div>
+          <p className="mt-3 text-xs text-slate-400">
+            Aggregated from activities in this period. Values are grouped by their recorded currency.
+          </p>
+        </CardContent>
+      </Card>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

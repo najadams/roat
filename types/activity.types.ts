@@ -15,6 +15,7 @@ export const ACTIVITY_TYPE_LABELS: Record<string, string> = {
 }
 
 export const ZONAL_OFFICE_LABELS: Record<string, string> = {
+  accra: 'Accra',
   kumasi: 'Kumasi',
   tamale: 'Tamale',
   takoradi: 'Takoradi',
@@ -43,6 +44,9 @@ export interface Activity {
   detail: string | null
   action_required: string | null
   status: string
+  investment_amount: number | null
+  investment_currency: string | null
+  jobs_created: number | null
   created_by: string
   updated_by: string | null
   created_at: string

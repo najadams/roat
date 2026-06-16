@@ -68,6 +68,59 @@ export async function upsertWeeklyReport(formData: unknown) {
   return { success: true }
 }
 
+export async function upsertWeeklyCategoryTargets(
+  zonalOffice: string,
+  weekEnding: string,
+  entries: { category_key: string; target_count: number }[]
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, zonal_office')
+    .eq('id', user.id)
+    .single()
+  if (!profile) return { error: 'Profile not found' }
+  if (profile.role === 'viewer') return { error: 'Viewers cannot set targets' }
+
+  const zone = profile.role === 'regional_admin' ? zonalOffice : profile.zonal_office
+  if (!zone) return { error: 'No zonal office resolved' }
+
+  // Targets with a value are upserted; zeros/blanks are cleared.
+  const toUpsert = entries.filter(e => e.target_count > 0)
+  const toClear = entries.filter(e => e.target_count <= 0).map(e => e.category_key)
+
+  if (toUpsert.length > 0) {
+    const { error } = await supabase.from('weekly_category_targets').upsert(
+      toUpsert.map(e => ({
+        zonal_office: zone as ZonalOffice,
+        week_ending: weekEnding,
+        category_key: e.category_key,
+        target_count: e.target_count,
+        created_by: user.id,
+        updated_by: user.id,
+      })),
+      { onConflict: 'zonal_office,week_ending,category_key' }
+    )
+    if (error) return { error: error.message }
+  }
+
+  if (toClear.length > 0) {
+    const { error } = await supabase
+      .from('weekly_category_targets')
+      .delete()
+      .eq('zonal_office', zone as ZonalOffice)
+      .eq('week_ending', weekEnding)
+      .in('category_key', toClear)
+    if (error) return { error: error.message }
+  }
+
+  revalidatePath('/module-a/weekly-report')
+  return { success: true }
+}
+
 export async function getWeeklyReportData(
   zonalOffice: string,
   weekEnding: string
@@ -109,7 +162,7 @@ export async function getWeeklyReportData(
     }
   }
 
-  // Quarterly targets → derive weekly
+  // Quarterly targets → derive weekly (fallback)
   const quarterlyTargets = await getTargetsForPeriod({
     zonal_office: zone,
     period_type: 'quarterly',
@@ -117,18 +170,29 @@ export async function getWeeklyReportData(
     period_value: quarter,
   })
 
+  // Explicit weekly targets (override the derived value when present)
+  const { data: weeklyTargetRows } = await supabase
+    .from('weekly_category_targets')
+    .select('category_key, target_count')
+    .eq('zonal_office', zone)
+    .eq('week_ending', weekEnding)
+  const explicitTargets: Record<string, number> = {}
+  for (const t of weeklyTargetRows ?? []) explicitTargets[t.category_key] = t.target_count
+
   // Section B — category rows
   const categories: WeeklyCategoryRow[] = WEEKLY_REPORT_CATEGORIES.map(cat => {
     const inCat = rows.filter(r => cat.types.includes(r.activity_type as ActivityType))
     const achieved = inCat.length
+    const hasExplicit = cat.key in explicitTargets
     const quarterlyTarget = cat.types.reduce((s, t) => s + (quarterlyTargets[t] ?? 0), 0)
-    const target = quarterlyTarget > 0 ? Math.round(quarterlyTarget / weeksInQuarter) : null
+    const derived = quarterlyTarget > 0 ? Math.round(quarterlyTarget / weeksInQuarter) : null
+    const target = hasExplicit ? explicitTargets[cat.key] : derived
     const variance = target !== null ? achieved - target : null
     const companies = inCat.map(r => r.company_name).filter(Boolean)
     const comments = companies.length
       ? companies.map((c, i) => `${i + 1}. ${c}`).join('\n')
       : ''
-    return { key: cat.key, label: cat.label, target, achieved, variance, comments }
+    return { key: cat.key, label: cat.label, target, targetExplicit: hasExplicit, achieved, variance, comments }
   })
 
   const totals = {

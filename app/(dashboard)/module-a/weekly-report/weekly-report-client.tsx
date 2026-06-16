@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { ZoneSelector } from '@/components/shared/ZoneSelector'
-import { upsertWeeklyReport } from '@/actions/weekly-report.actions'
+import { upsertWeeklyReport, upsertWeeklyCategoryTargets } from '@/actions/weekly-report.actions'
 import { formatDate } from '@/lib/utils/date-helpers'
 import type { WeeklyReportData } from '@/types/weekly-report.types'
 
@@ -25,6 +25,30 @@ export function WeeklyReportClient({ data, canEdit, canPickZone }: Props) {
   const [highlights, setHighlights] = useState(data.narrative?.key_highlights ?? '')
   const [challenges, setChallenges] = useState(data.narrative?.challenges ?? '')
   const [summary, setSummary] = useState(data.narrative?.narrative_summary ?? '')
+
+  const [savingTargets, setSavingTargets] = useState(false)
+  const [targets, setTargets] = useState<Record<string, string>>(
+    () => Object.fromEntries(data.categories.map(c => [c.key, c.target?.toString() ?? '']))
+  )
+
+  async function saveTargets() {
+    setSavingTargets(true)
+    const result = await upsertWeeklyCategoryTargets(
+      data.zonalOffice,
+      data.weekEnding,
+      data.categories.map(c => ({
+        category_key: c.key,
+        target_count: parseInt(targets[c.key] ?? '') || 0,
+      }))
+    )
+    setSavingTargets(false)
+    if ('error' in result) {
+      toast.error(typeof result.error === 'string' ? result.error : 'Failed to save targets')
+    } else {
+      toast.success('Weekly targets saved')
+      router.refresh()
+    }
+  }
 
   function navigate(next: { zone?: string; week?: string }) {
     const p = new URLSearchParams()
@@ -91,10 +115,15 @@ export function WeeklyReportClient({ data, canEdit, canPickZone }: Props) {
 
       {/* Section B */}
       <Card className="border-slate-100 shadow-sm overflow-hidden">
-        <CardHeader className="pb-2 pt-5 px-5">
+        <CardHeader className="pb-2 pt-5 px-5 flex-row items-center justify-between">
           <CardTitle className="text-sm font-semibold text-slate-900 tracking-tight">
             Section B — Weekly Summary
           </CardTitle>
+          {canEdit && (
+            <Button onClick={saveTargets} disabled={savingTargets} variant="outline" size="sm" className="border-slate-200">
+              {savingTargets ? 'Saving…' : 'Save Targets'}
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="px-0 pb-0">
           <div className="overflow-x-auto">
@@ -110,7 +139,20 @@ export function WeeklyReportClient({ data, canEdit, canPickZone }: Props) {
                 {data.categories.map(c => (
                   <tr key={c.key} className="border-b border-slate-50 align-top">
                     <td className="px-5 py-3 font-medium text-slate-700">{c.label}</td>
-                    <td className="px-5 py-3 text-slate-500">{c.target ?? '—'}</td>
+                    <td className="px-5 py-3 text-slate-500">
+                      {canEdit ? (
+                        <Input
+                          type="number"
+                          min="0"
+                          value={targets[c.key] ?? ''}
+                          onChange={e => setTargets(prev => ({ ...prev, [c.key]: e.target.value }))}
+                          placeholder="—"
+                          className="h-8 w-20 text-sm border-slate-200"
+                        />
+                      ) : (
+                        c.target ?? '—'
+                      )}
+                    </td>
                     <td className="px-5 py-3 font-semibold text-slate-900">{c.achieved}</td>
                     <td className={`px-5 py-3 font-medium ${c.variance === null ? 'text-slate-400' : c.variance >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                       {c.variance === null ? '—' : c.variance > 0 ? `+${c.variance}` : c.variance}

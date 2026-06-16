@@ -57,6 +57,7 @@ export interface WeeklyCategoryRow {
   key: string
   label: string
   target: number | null
+  targetExplicit: boolean
   achieved: number
   variance: number | null
   comments: string

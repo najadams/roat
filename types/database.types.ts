@@ -204,6 +204,42 @@ export interface Database {
         }
         Relationships: []
       }
+      weekly_category_targets: {
+        Row: {
+          id: string
+          zonal_office: ZonalOffice
+          week_ending: string
+          category_key: string
+          target_count: number
+          created_by: string
+          updated_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          zonal_office: ZonalOffice
+          week_ending: string
+          category_key: string
+          target_count: number
+          created_by: string
+          updated_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          zonal_office?: ZonalOffice
+          week_ending?: string
+          category_key?: string
+          target_count?: number
+          created_by?: string
+          updated_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       activity_attachments: {
         Row: {
           id: string

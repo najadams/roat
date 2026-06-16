@@ -21,6 +21,42 @@ export function getReportDateRange(period: ReportPeriod, date = new Date()) {
   }
 }
 
+/**
+ * Resolves a report's date range (yyyy-MM-dd strings) for an explicitly
+ * selected period — year + quarter/month/week — rather than "now".
+ * Shared by the reports page and the export endpoint so they always agree.
+ */
+export function getReportRange(
+  period: ReportPeriod,
+  opts: { year: number; quarter?: number; month?: number; week?: number }
+): { from: string; to: string } {
+  const { year, quarter = 1, month = 1, week = 1 } = opts
+  const pad = (n: number) => String(n).padStart(2, '0')
+
+  if (period === 'weekly') {
+    // Monday–Sunday of the given ISO week
+    const jan4 = new Date(year, 0, 4)
+    const dow = jan4.getDay() || 7
+    const monday = new Date(jan4)
+    monday.setDate(jan4.getDate() - (dow - 1) + (week - 1) * 7)
+    const sunday = new Date(monday)
+    sunday.setDate(monday.getDate() + 6)
+    const fmt = (d: Date) => d.toISOString().slice(0, 10)
+    return { from: fmt(monday), to: fmt(sunday) }
+  }
+  if (period === 'monthly') {
+    const lastDay = new Date(year, month, 0).getDate()
+    return { from: `${year}-${pad(month)}-01`, to: `${year}-${pad(month)}-${pad(lastDay)}` }
+  }
+  if (period === 'quarterly') {
+    const qStart = (quarter - 1) * 3 + 1
+    const qEnd = qStart + 2
+    const lastDay = new Date(year, qEnd, 0).getDate()
+    return { from: `${year}-${pad(qStart)}-01`, to: `${year}-${pad(qEnd)}-${pad(lastDay)}` }
+  }
+  return { from: `${year}-01-01`, to: `${year}-12-31` }
+}
+
 export function formatDate(date: string | Date): string {
   return format(new Date(date), 'dd MMM yyyy')
 }

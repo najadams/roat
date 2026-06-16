@@ -39,9 +39,12 @@ export default async function ActivitiesPage({ searchParams }: PageProps) {
     .is('deleted_at', null)
     .order('date', { ascending: false })
 
+  // Admins and viewers see every zone; officers are locked to their own.
+  const canSeeAllZones = profile?.role !== 'zonal_officer'
+
   if (params.type) query = query.eq('activity_type', params.type as ActivityType)
   if (params.status) query = query.eq('status', params.status as ActivityStatus)
-  if (params.zone && profile?.role === 'regional_admin') {
+  if (params.zone && canSeeAllZones) {
     query = query.eq('zonal_office', params.zone as ZonalOffice)
   }
   if (params.month) {
@@ -75,11 +78,11 @@ export default async function ActivitiesPage({ searchParams }: PageProps) {
         )}
       </div>
 
-      <ActivityFilters showZoneFilter={isAdmin} />
+      <ActivityFilters showZoneFilter={canSeeAllZones} />
 
       <ActivityTable
         activities={(activities ?? []) as Activity[]}
-        showZone={isAdmin}
+        showZone={canSeeAllZones}
         canDelete={isAdmin}
       />
     </div>

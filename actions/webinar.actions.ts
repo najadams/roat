@@ -51,7 +51,8 @@ export async function completeWebinarTask(taskId: string, notes?: string) {
       notes: notes ?? null,
     })
     .eq('id', taskId)
-    .eq('status', 'in_progress')
+    // An active task is either in progress or already flagged delayed by the alarm
+    .in('status', ['in_progress', 'delayed'])
 
   if (error) return { error: error.message }
 
@@ -104,11 +105,13 @@ export async function updateTaskDeadline(taskId: string, deadline: string) {
   if (task.status === 'completed') return { error: 'Cannot edit a completed task' }
 
   const isNowOnTime = newDeadline > new Date()
+  const isActive = task.status === 'in_progress' || task.status === 'delayed'
   const { error } = await supabase
     .from('webinar_tasks')
     .update({
       deadline: newDeadline.toISOString(),
-      ...(isNowOnTime && task.status === 'in_progress' ? { is_delayed: false, status: 'in_progress' } : {}),
+      // Moving an active task's deadline into the future clears the delay flag/status
+      ...(isNowOnTime && isActive ? { is_delayed: false, status: 'in_progress' } : {}),
     })
     .eq('id', taskId)
 

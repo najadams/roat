@@ -7,7 +7,7 @@ import { ACTIVITY_TYPE_LABELS, ZONAL_OFFICE_LABELS } from '@/types/activity.type
 import type { Database, ZonalOffice } from '@/types/database.types'
 import { ReportsPeriodSelector } from './reports-period-selector'
 import { getTargetsForPeriod } from '@/actions/target.actions'
-import { getMonthOfWeek } from '@/lib/utils/date-helpers'
+import { getMonthOfWeek, getReportRange } from '@/lib/utils/date-helpers'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 
@@ -30,18 +30,6 @@ function getISOWeek(date: Date): number {
   return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7)
 }
 
-function getWeekDateRange(week: number, year: number): { from: string; to: string } {
-  // Find Monday of the given ISO week
-  const jan4 = new Date(year, 0, 4)
-  const dow = jan4.getDay() || 7
-  const monday = new Date(jan4)
-  monday.setDate(jan4.getDate() - (dow - 1) + (week - 1) * 7)
-  const sunday = new Date(monday)
-  sunday.setDate(monday.getDate() + 6)
-  const fmt = (d: Date) => d.toISOString().slice(0, 10)
-  return { from: fmt(monday), to: fmt(sunday) }
-}
-
 export async function ReportsContent({ profile, searchParams }: ReportsContentProps) {
   const supabase = await createClient()
   const period = (searchParams.period ?? 'monthly') as 'weekly' | 'monthly' | 'quarterly' | 'annual'
@@ -52,28 +40,8 @@ export async function ReportsContent({ profile, searchParams }: ReportsContentPr
   const month = parseInt(searchParams.month ?? String(now.getMonth() + 1))
   const week = parseInt(searchParams.week ?? String(getISOWeek(now)))
 
-  // Build date range
-  let fromDate: string
-  let toDate: string
-
-  if (period === 'weekly') {
-    const range = getWeekDateRange(week, year)
-    fromDate = range.from
-    toDate = range.to
-  } else if (period === 'monthly') {
-    fromDate = `${year}-${String(month).padStart(2, '0')}-01`
-    const lastDay = new Date(year, month, 0).getDate()
-    toDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`
-  } else if (period === 'quarterly') {
-    const qStart = (quarter - 1) * 3 + 1
-    const qEnd = qStart + 2
-    fromDate = `${year}-${String(qStart).padStart(2, '0')}-01`
-    const lastDay = new Date(year, qEnd, 0).getDate()
-    toDate = `${year}-${String(qEnd).padStart(2, '0')}-${lastDay}`
-  } else {
-    fromDate = `${year}-01-01`
-    toDate = `${year}-12-31`
-  }
+  // Build date range (shared with the export endpoint so they always agree)
+  const { from: fromDate, to: toDate } = getReportRange(period, { year, quarter, month, week })
 
   let query = supabase
     .from('activities')
@@ -163,7 +131,7 @@ export async function ReportsContent({ profile, searchParams }: ReportsContentPr
             Activity summary for {period} period
           </p>
         </div>
-        <ExportButton period={period} zone={zone} />
+        <ExportButton period={period} zone={zone} year={year} quarter={quarter} month={month} week={week} />
       </div>
 
       <ReportsPeriodSelector

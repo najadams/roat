@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { exportToExcel, exportToPDF } from '@/lib/utils/export-helpers'
-import { getReportDateRange } from '@/lib/utils/date-helpers'
+import { getReportRange } from '@/lib/utils/date-helpers'
 import type { Activity } from '@/types/activity.types'
 import type { ReportPeriod } from '@/lib/utils/date-helpers'
 import type { ZonalOffice } from '@/types/database.types'
@@ -12,6 +12,16 @@ export async function GET(request: NextRequest) {
   const formatParam = searchParams.get('format') as 'pdf' | 'excel' | null
   const period = (searchParams.get('period') ?? 'monthly') as ReportPeriod
   const zone = searchParams.get('zone') ?? undefined
+
+  const now = new Date()
+  const num = (key: string, fallback: number) => {
+    const v = parseInt(searchParams.get(key) ?? '')
+    return Number.isNaN(v) ? fallback : v
+  }
+  const year = num('year', now.getFullYear())
+  const quarter = num('quarter', Math.floor(now.getMonth() / 3) + 1)
+  const month = num('month', now.getMonth() + 1)
+  const week = num('week', 1)
 
   const supabase = await createClient()
   const {
@@ -27,9 +37,7 @@ export async function GET(request: NextRequest) {
     .eq('id', user.id)
     .single()
 
-  const { from, to } = getReportDateRange(period)
-  const fromStr = format(from, 'yyyy-MM-dd')
-  const toStr = format(to, 'yyyy-MM-dd')
+  const { from: fromStr, to: toStr } = getReportRange(period, { year, quarter, month, week })
 
   let query = supabase
     .from('activities')

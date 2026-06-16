@@ -54,6 +54,15 @@ interface SidebarProps {
 export function Sidebar({ role, onClose }: SidebarProps) {
   const pathname = usePathname()
 
+  // Viewers are read-only — hide the "create" links (they'd only bounce back).
+  const isViewer = role === 'viewer'
+  const createHrefs = ['/module-a/new', '/module-b/new']
+  const visibleNav = navItems.map(item =>
+    item.children
+      ? { ...item, children: item.children.filter(c => !(isViewer && createHrefs.includes(c.href))) }
+      : item
+  )
+
   function isActive(href: string) {
     return pathname === href || pathname.startsWith(href + '/')
   }
@@ -81,7 +90,7 @@ export function Sidebar({ role, onClose }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-1">
-        {navItems.map(item => {
+        {visibleNav.map(item => {
           if (item.children) {
             const active = isGroupActive(item.children)
             return (

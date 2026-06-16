@@ -14,9 +14,13 @@ import { toast } from 'sonner'
 interface ExportButtonProps {
   period: string
   zone?: string
+  year?: number
+  quarter?: number
+  month?: number
+  week?: number
 }
 
-export function ExportButton({ period, zone }: ExportButtonProps) {
+export function ExportButton({ period, zone, year, quarter, month, week }: ExportButtonProps) {
   const [loading, setLoading] = useState(false)
 
   async function handleExport(format: 'pdf' | 'excel') {
@@ -24,6 +28,11 @@ export function ExportButton({ period, zone }: ExportButtonProps) {
     try {
       const params = new URLSearchParams({ format, period })
       if (zone && zone !== 'all') params.set('zone', zone)
+      // Carry the selected period so the export matches the on-screen report
+      if (year !== undefined) params.set('year', String(year))
+      if (quarter !== undefined) params.set('quarter', String(quarter))
+      if (month !== undefined) params.set('month', String(month))
+      if (week !== undefined) params.set('week', String(week))
 
       const response = await fetch(`/api/export?${params.toString()}`)
       if (!response.ok) throw new Error('Export failed')

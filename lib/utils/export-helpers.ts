@@ -80,7 +80,7 @@ export function exportToPDF(
     tableWidth: 120,
   })
 
-  const summaryEndY = (doc as any).lastAutoTable.finalY
+  const summaryEndY = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY
 
   // Main data table with all 11 columns
   autoTable(doc, {

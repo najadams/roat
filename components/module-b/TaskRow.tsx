@@ -33,7 +33,9 @@ export function TaskRow({ task, canComplete = false, canEditDeadline = false }: 
   )
   const [savingDeadline, setSavingDeadline] = useState(false)
 
-  const delayed = task.status === 'in_progress' && isTaskDelayed(task.deadline)
+  // A task is "active" while it's in progress or already flagged delayed by the alarm.
+  const isActive = task.status === 'in_progress' || task.status === 'delayed'
+  const delayed = task.status === 'delayed' || (isActive && isTaskDelayed(task.deadline))
   const delayDays = getDelayDays(task.deadline)
   const label = TASK_LABELS[task.task_name] ?? task.task_name
   const isEditable = canEditDeadline && task.status !== 'completed'
@@ -170,7 +172,7 @@ export function TaskRow({ task, canComplete = false, canEditDeadline = false }: 
           )}
         </td>
         <td className="px-5 py-3.5">
-          {canComplete && task.status === 'in_progress' && (
+          {canComplete && isActive && (
             <Button
               size="sm"
               onClick={() => setShowComplete(true)}

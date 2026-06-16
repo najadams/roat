@@ -27,6 +27,7 @@ const navItems = [
       { label: 'Log Activity', href: '/module-a/new' },
       { label: 'All Activities', href: '/module-a/activities' },
       { label: 'Reports', href: '/module-a/reports' },
+      { label: 'Weekly Report', href: '/module-a/weekly-report' },
     ],
   },
   {

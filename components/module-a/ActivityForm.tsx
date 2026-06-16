@@ -1,11 +1,13 @@
 'use client'
 
 import { useForm } from 'react-hook-form'
+import { useState, useEffect } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { activitySchema, type ActivityFormData, type ActivityFormInput } from '@/lib/validations/activity.schema'
-import { createActivity, updateActivity } from '@/actions/activity.actions'
+import { createActivity, updateActivity, addActivityAttachments, getActivityAttachments } from '@/actions/activity.actions'
+import { createClient } from '@/lib/supabase/client'
 import { ACTIVITY_TYPE_LABELS } from '@/types/activity.types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -67,6 +69,7 @@ export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
           sector: activity.sector ?? '',
           detail: activity.detail ?? '',
           action_required: activity.action_required ?? '',
+          outcome: activity.outcome ?? '',
           investment_amount: activity.investment_amount ?? '',
           investment_currency: activity.investment_currency ?? 'USD',
           jobs_created: activity.jobs_created ?? '',
@@ -84,6 +87,30 @@ export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
   const selectedStatus = watch('status')
   const selectedZone = watch('zonal_office')
 
+  // Evidence files
+  const [files, setFiles] = useState<File[]>([])
+  const [existing, setExisting] = useState<{ id: string; name: string; url: string | null }[]>([])
+
+  useEffect(() => {
+    if (activity?.id) getActivityAttachments(activity.id).then(setExisting)
+  }, [activity?.id])
+
+  async function uploadEvidence(activityId: string) {
+    if (files.length === 0) return
+    const supabase = createClient()
+    const uploaded: { path: string; name: string; mime: string }[] = []
+    for (const file of files) {
+      const path = `${activityId}/${Date.now()}-${file.name}`
+      const { error } = await supabase.storage.from('evidence').upload(path, file)
+      if (error) {
+        toast.error(`Failed to upload ${file.name}`)
+        continue
+      }
+      uploaded.push({ path, name: file.name, mime: file.type })
+    }
+    if (uploaded.length > 0) await addActivityAttachments(activityId, uploaded)
+  }
+
   async function onSubmit(data: ActivityFormData) {
     const result = isEditing
       ? await updateActivity(activity.id, data)
@@ -97,6 +124,9 @@ export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
       }
       return
     }
+
+    const activityId = isEditing ? activity.id : (result as { id?: string }).id
+    if (activityId) await uploadEvidence(activityId)
 
     toast.success(isEditing ? 'Activity updated successfully' : 'Activity logged successfully')
     router.push('/module-a/activities')
@@ -389,6 +419,49 @@ export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
               rows={3}
               className="text-sm border-slate-200 resize-none"
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="outcome" className="text-sm font-medium text-slate-700">
+              Outcome
+            </Label>
+            <Textarea
+              id="outcome"
+              {...register('outcome')}
+              placeholder="Result / outcome of this activity (for the weekly report)..."
+              rows={3}
+              className="text-sm border-slate-200 resize-none"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="evidence" className="text-sm font-medium text-slate-700">
+              Evidence (Photos / Documents)
+            </Label>
+            {existing.length > 0 && (
+              <ul className="space-y-1">
+                {existing.map(a => (
+                  <li key={a.id} className="text-sm">
+                    {a.url ? (
+                      <a href={a.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                        {a.name}
+                      </a>
+                    ) : (
+                      <span className="text-slate-600">{a.name}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <Input
+              id="evidence"
+              type="file"
+              multiple
+              accept="image/*,application/pdf"
+              onChange={e => setFiles(Array.from(e.target.files ?? []))}
+              className="h-auto py-2 text-sm border-slate-200"
+            />
+            {files.length > 0 && (
+              <p className="text-xs text-slate-500">{files.length} file(s) ready to upload on save</p>
+            )}
           </div>
         </CardContent>
       </Card>

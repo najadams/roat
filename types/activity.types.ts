@@ -47,6 +47,7 @@ export interface Activity {
   investment_amount: number | null
   investment_currency: string | null
   jobs_created: number | null
+  outcome: string | null
   created_by: string
   updated_by: string | null
   created_at: string

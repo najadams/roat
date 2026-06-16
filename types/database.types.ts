@@ -110,6 +110,7 @@ export interface Database {
           investment_amount: number | null
           investment_currency: string | null
           jobs_created: number | null
+          outcome: string | null
         }
         Insert: {
           id?: string
@@ -133,6 +134,7 @@ export interface Database {
           investment_amount?: number | null
           investment_currency?: string | null
           jobs_created?: number | null
+          outcome?: string | null
         }
         Update: {
           id?: string
@@ -156,6 +158,79 @@ export interface Database {
           investment_amount?: number | null
           investment_currency?: string | null
           jobs_created?: number | null
+          outcome?: string | null
+        }
+        Relationships: []
+      }
+      weekly_reports: {
+        Row: {
+          id: string
+          zonal_office: ZonalOffice
+          week_ending: string
+          officer_name: string | null
+          key_highlights: string | null
+          challenges: string | null
+          narrative_summary: string | null
+          created_by: string
+          updated_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          zonal_office: ZonalOffice
+          week_ending: string
+          officer_name?: string | null
+          key_highlights?: string | null
+          challenges?: string | null
+          narrative_summary?: string | null
+          created_by: string
+          updated_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          zonal_office?: ZonalOffice
+          week_ending?: string
+          officer_name?: string | null
+          key_highlights?: string | null
+          challenges?: string | null
+          narrative_summary?: string | null
+          created_by?: string
+          updated_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      activity_attachments: {
+        Row: {
+          id: string
+          activity_id: string
+          storage_path: string
+          file_name: string | null
+          mime_type: string | null
+          uploaded_by: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          activity_id: string
+          storage_path: string
+          file_name?: string | null
+          mime_type?: string | null
+          uploaded_by: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          activity_id?: string
+          storage_path?: string
+          file_name?: string | null
+          mime_type?: string | null
+          uploaded_by?: string
+          created_at?: string
         }
         Relationships: []
       }

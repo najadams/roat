@@ -40,6 +40,7 @@ export const activitySchema = z.object({
   sector: z.string().optional(),
   detail: z.string().optional(),
   action_required: z.string().optional(),
+  outcome: z.string().optional(),
   // Investment outcomes (optional) — power the impact reporting
   investment_amount: z.preprocess(
     v => (v === '' || v === null || v === undefined ? undefined : Number(v)),

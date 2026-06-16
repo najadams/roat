@@ -38,16 +38,20 @@ export async function createActivity(formData: unknown) {
     }
   }
 
-  const { error } = await supabase.from('activities').insert({
-    ...rest,
-    zonal_office: zone,
-    created_by: user.id,
-  })
+  const { data: inserted, error } = await supabase
+    .from('activities')
+    .insert({
+      ...rest,
+      zonal_office: zone,
+      created_by: user.id,
+    })
+    .select('id')
+    .single()
 
   if (error) return { error: error.message }
 
   revalidatePath('/module-a/activities')
-  return { success: true }
+  return { success: true, id: inserted.id }
 }
 
 export async function updateActivity(id: string, formData: unknown) {
@@ -101,6 +105,58 @@ export async function updateActivity(id: string, formData: unknown) {
   revalidatePath('/module-a/activities')
   revalidatePath(`/module-a/activities/${id}`)
   return { success: true }
+}
+
+const EVIDENCE_BUCKET = 'evidence'
+
+/**
+ * Records evidence files (already uploaded to the `evidence` Storage bucket by
+ * the client) against an activity.
+ */
+export async function addActivityAttachments(
+  activityId: string,
+  files: { path: string; name: string; mime: string }[]
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+  if (files.length === 0) return { success: true }
+
+  const { error } = await supabase.from('activity_attachments').insert(
+    files.map(f => ({
+      activity_id: activityId,
+      storage_path: f.path,
+      file_name: f.name,
+      mime_type: f.mime,
+      uploaded_by: user.id,
+    }))
+  )
+
+  if (error) return { error: error.message }
+  revalidatePath(`/module-a/activities/${activityId}`)
+  return { success: true }
+}
+
+/** Returns an activity's attachments with short-lived signed download URLs. */
+export async function getActivityAttachments(activityId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const { data: rows } = await supabase
+    .from('activity_attachments')
+    .select('id, storage_path, file_name, mime_type')
+    .eq('activity_id', activityId)
+    .order('created_at', { ascending: true })
+
+  const out: { id: string; name: string; url: string | null }[] = []
+  for (const r of rows ?? []) {
+    const { data: signed } = await supabase.storage
+      .from(EVIDENCE_BUCKET)
+      .createSignedUrl(r.storage_path, 60 * 60)
+    out.push({ id: r.id, name: r.file_name ?? 'file', url: signed?.signedUrl ?? null })
+  }
+  return out
 }
 
 export async function deleteActivity(id: string) {

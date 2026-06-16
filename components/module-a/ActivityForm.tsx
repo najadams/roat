@@ -434,7 +434,7 @@ export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="evidence" className="text-sm font-medium text-slate-700">
-              Evidence (Photos / Documents)
+              Evidence (Photos / Documents) <span className="font-normal text-slate-400">— optional</span>
             </Label>
             {existing.length > 0 && (
               <ul className="space-y-1">

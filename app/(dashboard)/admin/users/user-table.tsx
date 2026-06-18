@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { updateUserProfile, inviteUser } from '@/actions/user.actions'
 import { ZONAL_OFFICE_LABELS } from '@/types/activity.types'
-import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,7 +11,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -54,6 +53,17 @@ export function UserTable({ users: initialUsers }: UserTableProps) {
     setInviteOpen(true)
   }
 
+  function getErrorMessage(error: unknown, fallback: string) {
+    if (typeof error === 'string') return error
+    if (!error || typeof error !== 'object') return fallback
+
+    const fieldErrors = Object.values(error as Record<string, unknown>)
+      .flatMap(value => Array.isArray(value) ? value : [])
+      .filter((message): message is string => typeof message === 'string')
+
+    return fieldErrors[0] ?? fallback
+  }
+
   async function handleInvite() {
     setInviting(true)
     const result = await inviteUser({
@@ -64,7 +74,7 @@ export function UserTable({ users: initialUsers }: UserTableProps) {
     })
 
     if (result.error) {
-      toast.error(typeof result.error === 'string' ? result.error : 'Failed to invite user')
+      toast.error(getErrorMessage(result.error, 'Failed to invite user'))
     } else {
       toast.success('Invitation sent — the user will receive a setup email')
       setInviteOpen(false)
@@ -94,7 +104,7 @@ export function UserTable({ users: initialUsers }: UserTableProps) {
     })
 
     if (result.error) {
-      toast.error(typeof result.error === 'string' ? result.error : 'Failed to update user')
+      toast.error(getErrorMessage(result.error, 'Failed to update user'))
     } else {
       toast.success('User updated successfully')
       setUsers(prev =>
@@ -188,6 +198,9 @@ export function UserTable({ users: initialUsers }: UserTableProps) {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-slate-900">Invite New User</DialogTitle>
+            <DialogDescription>
+              Send a secure setup link to a new Argus user.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-5 py-2">
             <div className="space-y-2">
@@ -215,7 +228,13 @@ export function UserTable({ users: initialUsers }: UserTableProps) {
               <Label className="text-sm font-medium text-slate-700">Role</Label>
               <RadioGroup
                 value={inviteForm.role}
-                onValueChange={val => setInviteForm(f => ({ ...f, role: val }))}
+                onValueChange={val =>
+                  setInviteForm(f => ({
+                    ...f,
+                    role: val,
+                    zonal_office: val === 'zonal_officer' ? f.zonal_office : '',
+                  }))
+                }
                 className="flex flex-col gap-2"
               >
                 {[
@@ -236,30 +255,36 @@ export function UserTable({ users: initialUsers }: UserTableProps) {
               </RadioGroup>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-slate-700">Zonal Office</Label>
-              <Select
-                value={inviteForm.zonal_office || 'none'}
-                onValueChange={val => setInviteForm(f => ({ ...f, zonal_office: val === 'none' ? '' : val }))}
-              >
-                <SelectTrigger className="h-10 text-sm border-slate-200">
-                  <SelectValue placeholder="Select zone (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none" className="text-sm">No Zone (Admin / Viewer)</SelectItem>
-                  {Object.entries(ZONAL_OFFICE_LABELS).map(([key, label]) => (
-                    <SelectItem key={key} value={key} className="text-sm">{label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-slate-400">Required for Zonal Officers. Leave blank for Administrators and Viewers.</p>
-            </div>
+            {inviteForm.role === 'zonal_officer' && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-slate-700">Zonal Office</Label>
+                <Select
+                  value={inviteForm.zonal_office}
+                  onValueChange={val => setInviteForm(f => ({ ...f, zonal_office: val }))}
+                >
+                  <SelectTrigger className="h-10 text-sm border-slate-200">
+                    <SelectValue placeholder="Select zone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(ZONAL_OFFICE_LABELS).map(([key, label]) => (
+                      <SelectItem key={key} value={key} className="text-sm">{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-slate-400">Assign the officer to the office they report from.</p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setInviteOpen(false)}>Cancel</Button>
             <Button
               onClick={handleInvite}
-              disabled={inviting || !inviteForm.full_name || !inviteForm.email}
+              disabled={
+                inviting ||
+                !inviteForm.full_name ||
+                !inviteForm.email ||
+                (inviteForm.role === 'zonal_officer' && !inviteForm.zonal_office)
+              }
               className="bg-slate-900 hover:bg-slate-800 text-white text-sm"
             >
               {inviting ? 'Sending Invite...' : 'Send Invitation'}
@@ -273,6 +298,9 @@ export function UserTable({ users: initialUsers }: UserTableProps) {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-slate-900">Edit User</DialogTitle>
+            <DialogDescription>
+              Update account access, role, and office assignment.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-5 py-2">
             <div className="space-y-2">
@@ -288,7 +316,13 @@ export function UserTable({ users: initialUsers }: UserTableProps) {
               <Label className="text-sm font-medium text-slate-700">Role</Label>
               <RadioGroup
                 value={form.role}
-                onValueChange={val => setForm(f => ({ ...f, role: val }))}
+                onValueChange={val =>
+                  setForm(f => ({
+                    ...f,
+                    role: val,
+                    zonal_office: val === 'zonal_officer' ? f.zonal_office : '',
+                  }))
+                }
                 className="flex flex-col gap-2"
               >
                 {[
@@ -309,23 +343,24 @@ export function UserTable({ users: initialUsers }: UserTableProps) {
               </RadioGroup>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-slate-700">Zonal Office</Label>
-              <Select
-                value={form.zonal_office || 'none'}
-                onValueChange={val => setForm(f => ({ ...f, zonal_office: val === 'none' ? '' : val }))}
-              >
-                <SelectTrigger className="h-10 text-sm border-slate-200">
-                  <SelectValue placeholder="Select zone (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none" className="text-sm">No Zone (Admin)</SelectItem>
-                  {Object.entries(ZONAL_OFFICE_LABELS).map(([key, label]) => (
-                    <SelectItem key={key} value={key} className="text-sm">{label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {form.role === 'zonal_officer' && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-slate-700">Zonal Office</Label>
+                <Select
+                  value={form.zonal_office}
+                  onValueChange={val => setForm(f => ({ ...f, zonal_office: val }))}
+                >
+                  <SelectTrigger className="h-10 text-sm border-slate-200">
+                    <SelectValue placeholder="Select zone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(ZONAL_OFFICE_LABELS).map(([key, label]) => (
+                      <SelectItem key={key} value={key} className="text-sm">{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label className="text-sm font-medium text-slate-700">Account Status</Label>
@@ -357,7 +392,7 @@ export function UserTable({ users: initialUsers }: UserTableProps) {
             <Button variant="ghost" onClick={() => setEditing(null)}>Cancel</Button>
             <Button
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || (form.role === 'zonal_officer' && !form.zonal_office)}
               className="bg-slate-900 hover:bg-slate-800 text-white text-sm"
             >
               {saving ? 'Saving...' : 'Save Changes'}

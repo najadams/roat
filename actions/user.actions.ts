@@ -5,14 +5,35 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import type { ZonalOffice, UserRole } from '@/types/database.types'
 
+const zonalOffices = ['accra', 'kumasi', 'tamale', 'takoradi', 'techiman', 'ho', 'koforidua'] as const
+const productionAppUrl = 'https://roat.netlify.app'
+
+function getAppUrl() {
+  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.URL || productionAppUrl
+
+  if (process.env.NODE_ENV === 'production' && configuredUrl.includes('localhost')) {
+    return productionAppUrl
+  }
+
+  return configuredUrl.replace(/\/$/, '')
+}
+
 const inviteUserSchema = z.object({
   full_name: z.string().min(1, 'Full name is required').max(200),
   email: z.string().email('Invalid email address'),
   role: z.enum(['zonal_officer', 'regional_admin', 'viewer']),
   zonal_office: z
-    .enum(['kumasi', 'tamale', 'takoradi', 'techiman', 'ho', 'koforidua'])
+    .enum(zonalOffices)
     .nullable()
     .optional(),
+}).superRefine((data, ctx) => {
+  if (data.role === 'zonal_officer' && !data.zonal_office) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Zonal office is required for Zonal Officers',
+      path: ['zonal_office'],
+    })
+  }
 })
 
 export async function inviteUser(data: unknown) {
@@ -58,10 +79,15 @@ export async function inviteUser(data: unknown) {
       data: {
         full_name: parsed.data.full_name,
       },
+      redirectTo: `${getAppUrl()}/login`,
     }
   )
 
   if (inviteError) return { error: inviteError.message }
+
+  const zonalOffice = parsed.data.role === 'zonal_officer'
+    ? parsed.data.zonal_office!
+    : null
 
   // Insert the profile row immediately so the user is visible in the table
   const { error: profileError } = await admin.from('profiles').insert({
@@ -69,7 +95,7 @@ export async function inviteUser(data: unknown) {
     full_name: parsed.data.full_name,
     email: parsed.data.email,
     role: parsed.data.role as UserRole,
-    zonal_office: (parsed.data.zonal_office ?? null) as ZonalOffice | null,
+    zonal_office: zonalOffice as ZonalOffice | null,
     is_active: true,
   })
 
@@ -82,11 +108,19 @@ export async function inviteUser(data: unknown) {
 const updateProfileSchema = z.object({
   full_name: z.string().min(1, 'Full name is required').max(200),
   zonal_office: z
-    .enum(['kumasi', 'tamale', 'takoradi', 'techiman', 'ho', 'koforidua'])
+    .enum(zonalOffices)
     .nullable()
     .optional(),
   role: z.enum(['zonal_officer', 'regional_admin', 'viewer']).optional(),
   is_active: z.boolean().optional(),
+}).superRefine((data, ctx) => {
+  if (data.role === 'zonal_officer' && !data.zonal_office) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Zonal office is required for Zonal Officers',
+      path: ['zonal_office'],
+    })
+  }
 })
 
 export async function updateUserProfile(userId: string, data: unknown) {
@@ -121,8 +155,10 @@ export async function updateUserProfile(userId: string, data: unknown) {
   } = {}
 
   if (parsed.data.full_name) updateData.full_name = parsed.data.full_name
-  if (parsed.data.zonal_office !== undefined)
-    updateData.zonal_office = parsed.data.zonal_office as ZonalOffice | null
+  if (parsed.data.zonal_office !== undefined || parsed.data.role)
+    updateData.zonal_office = parsed.data.role && parsed.data.role !== 'zonal_officer'
+      ? null
+      : parsed.data.zonal_office as ZonalOffice | null
   if (parsed.data.role) updateData.role = parsed.data.role as UserRole
   if (parsed.data.is_active !== undefined)
     updateData.is_active = parsed.data.is_active

@@ -6,6 +6,17 @@ import { z } from 'zod'
 import type { ZonalOffice, UserRole } from '@/types/database.types'
 
 const zonalOffices = ['accra', 'kumasi', 'tamale', 'takoradi', 'techiman', 'ho', 'koforidua'] as const
+const productionAppUrl = 'https://roat.netlify.app'
+
+function getAppUrl() {
+  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.URL || productionAppUrl
+
+  if (process.env.NODE_ENV === 'production' && configuredUrl.includes('localhost')) {
+    return productionAppUrl
+  }
+
+  return configuredUrl.replace(/\/$/, '')
+}
 
 const inviteUserSchema = z.object({
   full_name: z.string().min(1, 'Full name is required').max(200),
@@ -68,6 +79,7 @@ export async function inviteUser(data: unknown) {
       data: {
         full_name: parsed.data.full_name,
       },
+      redirectTo: `${getAppUrl()}/login`,
     }
   )
 

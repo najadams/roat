@@ -62,6 +62,7 @@ export interface Database {
           zonal_office: ZonalOffice | null
           role: UserRole
           is_active: boolean
+          onboarding_completed_at: string | null
           created_at: string
           updated_at: string
         }
@@ -72,6 +73,7 @@ export interface Database {
           zonal_office?: ZonalOffice | null
           role?: UserRole
           is_active?: boolean
+          onboarding_completed_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -82,6 +84,7 @@ export interface Database {
           zonal_office?: ZonalOffice | null
           role?: UserRole
           is_active?: boolean
+          onboarding_completed_at?: string | null
           created_at?: string
           updated_at?: string
         }

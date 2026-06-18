@@ -79,7 +79,7 @@ export async function inviteUser(data: unknown) {
       data: {
         full_name: parsed.data.full_name,
       },
-      redirectTo: `${getAppUrl()}/login`,
+      redirectTo: `${getAppUrl()}/auth/callback?next=/setup-password`,
     }
   )
 
@@ -89,14 +89,16 @@ export async function inviteUser(data: unknown) {
     ? parsed.data.zonal_office!
     : null
 
-  // Insert the profile row immediately so the user is visible in the table
-  const { error: profileError } = await admin.from('profiles').insert({
+  // Upsert because the auth.users trigger may create the profile first.
+  const { error: profileError } = await admin.from('profiles').upsert({
     id: invited.user.id,
     full_name: parsed.data.full_name,
     email: parsed.data.email,
     role: parsed.data.role as UserRole,
     zonal_office: zonalOffice as ZonalOffice | null,
     is_active: true,
+  }, {
+    onConflict: 'id',
   })
 
   if (profileError) return { error: profileError.message }
@@ -230,6 +232,44 @@ export async function changeOwnPassword(newPassword: string) {
   const { error } = await supabase.auth.updateUser({ password: parsed.data })
   if (error) return { error: error.message }
 
+  return { success: true }
+}
+
+export async function completeOnboardingPassword(newPassword: string) {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const parsed = z
+    .string()
+    .min(10, 'Password must be at least 10 characters')
+    .safeParse(newPassword)
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('is_active')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.is_active) return { error: 'This account is inactive. Contact your administrator.' }
+
+  const { error: passwordError } = await supabase.auth.updateUser({ password: parsed.data })
+  if (passwordError) return { error: passwordError.message }
+
+  const admin = createAdminClient()
+  const { error: profileError } = await admin
+    .from('profiles')
+    .update({ onboarding_completed_at: new Date().toISOString() })
+    .eq('id', user.id)
+
+  if (profileError) return { error: profileError.message }
+
+  revalidatePath('/dashboard')
+  revalidatePath('/profile')
   return { success: true }
 }
 

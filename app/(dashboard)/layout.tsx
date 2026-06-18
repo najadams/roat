@@ -20,5 +20,9 @@ export default async function DashboardLayout({
     .eq('id', user.id)
     .single()
 
+  if (!profile) redirect('/login')
+  if (!profile.is_active) redirect('/account-disabled')
+  if (!profile.onboarding_completed_at) redirect('/setup-password')
+
   return <DashboardShell profile={profile}>{children}</DashboardShell>
 }

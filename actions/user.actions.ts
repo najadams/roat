@@ -8,6 +8,11 @@ import type { ZonalOffice, UserRole } from '@/types/database.types'
 const zonalOffices = ['accra', 'kumasi', 'tamale', 'takoradi', 'techiman', 'ho', 'koforidua'] as const
 const productionAppUrl = 'https://roat.netlify.app'
 
+// Shared default password assigned to every invited user so they can sign in
+// immediately even if the invite email never arrives. They are still routed to
+// the Set-Password screen on first login (profiles.onboarding_completed_at is NULL).
+const DEFAULT_INVITE_PASSWORD = 'roat@1234'
+
 function getAppUrl() {
   const configuredUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.URL || productionAppUrl
 
@@ -84,6 +89,15 @@ export async function inviteUser(data: unknown) {
   )
 
   if (inviteError) return { error: inviteError.message }
+
+  // Set the shared default password and confirm the email so the user can log
+  // in with DEFAULT_INVITE_PASSWORD right away (the invite email link still
+  // works for setting their own password if it arrives).
+  const { error: passwordError } = await admin.auth.admin.updateUserById(invited.user.id, {
+    password: DEFAULT_INVITE_PASSWORD,
+    email_confirm: true,
+  })
+  if (passwordError) return { error: passwordError.message }
 
   const zonalOffice = parsed.data.role === 'zonal_officer'
     ? parsed.data.zonal_office!

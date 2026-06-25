@@ -190,6 +190,45 @@ export async function updateUserProfile(userId: string, data: unknown) {
   return { success: true }
 }
 
+export async function resetUserPassword(userId: string) {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: callerProfile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (callerProfile?.role !== 'regional_admin') {
+    return { error: 'Permission denied' }
+  }
+
+  const admin = createAdminClient()
+
+  // Reset to the shared default password and confirm the email so the user can
+  // sign in immediately.
+  const { error: passwordError } = await admin.auth.admin.updateUserById(userId, {
+    password: DEFAULT_INVITE_PASSWORD,
+    email_confirm: true,
+  })
+  if (passwordError) return { error: passwordError.message }
+
+  // Force the user to choose a new password on their next login.
+  const { error: profileError } = await admin
+    .from('profiles')
+    .update({ onboarding_completed_at: null })
+    .eq('id', userId)
+  if (profileError) return { error: profileError.message }
+
+  revalidatePath('/admin/users')
+  return { success: true, defaultPassword: DEFAULT_INVITE_PASSWORD }
+}
+
 export async function getCurrentProfile() {
   const supabase = await createClient()
 

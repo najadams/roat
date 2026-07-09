@@ -27,13 +27,22 @@ export const activityTypes: [ActivityType, ...ActivityType[]] = [
   'iomp_update',
 ]
 
+const PHONE_ERROR_MESSAGE = 'Enter a valid phone number, e.g. 024 123 4567 or +233 24 123 4567'
+
+function isValidPhone(value: string) {
+  const compact = value.trim().replace(/[\s().-]/g, '')
+  if (compact.length === 0) return true
+
+  return /^0\d{9}$/.test(compact) || /^\+\d{8,15}$/.test(compact)
+}
+
 const activityBaseSchema = z.object({
   // Only supplied by regional admins (officers inherit their own zone server-side)
   zonal_office: z.enum(zonalOffices).optional(),
   date: z.string().min(1, 'Date is required'),
   company_name: z.string().min(1, 'Company name is required').max(200),
   location: z.string().min(1, 'Location is required').max(200),
-  telephone: z.string().optional(),
+  telephone: z.string().refine(isValidPhone, PHONE_ERROR_MESSAGE).optional(),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   sector: z.string().optional(),
   detail: z.string().optional(),

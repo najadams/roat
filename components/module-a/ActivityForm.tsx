@@ -341,6 +341,9 @@ export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
                 placeholder="+233 xx xxx xxxx"
                 className="h-10 text-sm border-slate-200"
               />
+              {errors.telephone && (
+                <p className="text-xs text-red-500">{errors.telephone.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium text-slate-700">

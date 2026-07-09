@@ -27,13 +27,22 @@ export const activityTypes: [ActivityType, ...ActivityType[]] = [
   'iomp_update',
 ]
 
-const PHONE_ERROR_MESSAGE = 'Enter a valid phone number, e.g. 024 123 4567 or +233 24 123 4567'
+const PHONE_ERROR_MESSAGE = 'Enter valid phone number(s), e.g. 024 123 4567 or 0200710055/0508288446'
 
-function isValidPhone(value: string) {
+function isValidSinglePhone(value: string) {
   const compact = value.trim().replace(/[\s().-]/g, '')
-  if (compact.length === 0) return true
 
   return /^0\d{9}$/.test(compact) || /^\+\d{8,15}$/.test(compact)
+}
+
+function isValidPhone(value: string) {
+  const trimmed = value.trim()
+  if (trimmed.length === 0) return true
+
+  const phoneNumbers = trimmed.split(/[\/,]/).map(phone => phone.trim())
+  if (phoneNumbers.some(phone => phone.length === 0)) return false
+
+  return phoneNumbers.every(isValidSinglePhone)
 }
 
 const activityBaseSchema = z.object({

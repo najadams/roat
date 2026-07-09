@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { activitySchema } from '@/lib/validations/activity.schema'
+import { activitySchema, createActivitySchema } from '@/lib/validations/activity.schema'
 import { revalidatePath } from 'next/cache'
 
 export async function createActivity(formData: unknown) {
@@ -20,13 +20,13 @@ export async function createActivity(formData: unknown) {
 
   if (!profile) return { error: 'Profile not found' }
 
-  const parsed = activitySchema.safeParse(formData)
+  const parsed = createActivitySchema.safeParse(formData)
   if (!parsed.success) {
     return { error: parsed.error.flatten().fieldErrors }
   }
 
   // Admins choose the zone on the form; officers always use their assigned zone.
-  const { zonal_office: formZone, ...rest } = parsed.data
+  const { zonal_office: formZone, activity_types: activityTypes, ...rest } = parsed.data
   const isAdmin = profile.role === 'regional_admin'
   const zone = isAdmin ? formZone : profile.zonal_office
 
@@ -38,20 +38,26 @@ export async function createActivity(formData: unknown) {
     }
   }
 
+  const uniqueActivityTypes = Array.from(new Set(activityTypes))
   const { data: inserted, error } = await supabase
     .from('activities')
-    .insert({
-      ...rest,
-      zonal_office: zone,
-      created_by: user.id,
-    })
+    .insert(
+      uniqueActivityTypes.map(activityType => ({
+        ...rest,
+        activity_type: activityType,
+        zonal_office: zone,
+        created_by: user.id,
+      }))
+    )
     .select('id')
-    .single()
 
   if (error) return { error: error.message }
 
+  const ids = inserted?.map(row => row.id) ?? []
+  if (ids.length === 0) return { error: 'No activities were created' }
+
   revalidatePath('/module-a/activities')
-  return { success: true, id: inserted.id }
+  return { success: true, ids, id: ids[0] }
 }
 
 export async function updateActivity(id: string, formData: unknown) {

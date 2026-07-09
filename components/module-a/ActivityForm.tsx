@@ -1,6 +1,7 @@
 'use client'
 
 import { useForm } from 'react-hook-form'
+import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -23,6 +24,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Separator } from '@/components/ui/separator'
 import { ZoneSelector } from '@/components/shared/ZoneSelector'
 import type { Activity } from '@/types/activity.types'
+import { Check } from 'lucide-react'
 
 interface ActivityFormProps {
   activity?: Activity
@@ -42,10 +44,15 @@ const SECTORS = [
   'Construction', 'Retail - Trading', 'Real Estate', 'Other',
 ]
 
+type ActivityTypeValue = ActivityFormData['activity_type']
+
 export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
   const router = useRouter()
   const isEditing = !!activity
   const fieldsLocked = isEditing && !isAdmin
+  const [selectedActivityTypes, setSelectedActivityTypes] = useState<ActivityTypeValue[]>(
+    activity ? [activity.activity_type as ActivityTypeValue] : []
+  )
 
   const {
     register,
@@ -84,10 +91,19 @@ export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
   const selectedStatus = watch('status')
   const selectedZone = watch('zonal_office')
 
+  function toggleActivityType(value: ActivityTypeValue) {
+    const next = selectedActivityTypes.includes(value)
+      ? selectedActivityTypes.filter(type => type !== value)
+      : [...selectedActivityTypes, value]
+
+    setSelectedActivityTypes(next)
+    setValue('activity_type', next[0] as ActivityTypeValue, { shouldValidate: true })
+  }
+
   async function onSubmit(data: ActivityFormData) {
     const result = isEditing
       ? await updateActivity(activity.id, data)
-      : await createActivity(data)
+      : await createActivity({ ...data, activity_types: selectedActivityTypes })
 
     if (result.error) {
       if (typeof result.error === 'string') {
@@ -98,7 +114,16 @@ export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
       return
     }
 
-    toast.success(isEditing ? 'Activity updated successfully' : 'Activity logged successfully')
+    const activityIds = isEditing
+      ? [activity.id]
+      : (result as { ids?: string[]; id?: string }).ids ?? []
+    toast.success(
+      isEditing
+        ? 'Activity updated successfully'
+        : activityIds.length > 1
+          ? `${activityIds.length} activities logged successfully`
+          : 'Activity logged successfully'
+    )
     router.push('/module-a/activities')
   }
 
@@ -111,7 +136,9 @@ export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
             Activity Type
           </CardTitle>
           <CardDescription className="text-sm text-slate-500">
-            Select the category that best describes this activity.
+            {isEditing
+              ? 'Select the category that best describes this activity.'
+              : 'Select every activity completed for this company.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -122,7 +149,7 @@ export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
               </span>
               <span className="text-xs text-slate-400">(locked)</span>
             </div>
-          ) : (
+          ) : isEditing ? (
             <>
               <RadioGroup
                 value={selectedType}
@@ -143,6 +170,50 @@ export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
                   </label>
                 ))}
               </RadioGroup>
+              {errors.activity_type && (
+                <p className="mt-2 text-xs text-red-500">{errors.activity_type.message}</p>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="mb-4 inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                {selectedActivityTypes.length === 1
+                  ? '1 selected'
+                  : `${selectedActivityTypes.length} selected`}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {Object.entries(ACTIVITY_TYPE_LABELS).map(([value, label]) => {
+                  const typedValue = value as ActivityTypeValue
+                  const selected = selectedActivityTypes.includes(typedValue)
+
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => toggleActivityType(typedValue)}
+                      className={`group flex min-h-20 items-center gap-4 rounded-lg border p-4 text-left transition-colors ${
+                        selected
+                          ? 'border-slate-950 bg-slate-50 shadow-sm'
+                          : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/60'
+                      }`}
+                    >
+                      <span
+                        className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border transition-colors ${
+                          selected
+                            ? 'border-slate-950 bg-slate-950 text-white'
+                            : 'border-slate-300 bg-white text-transparent group-hover:border-slate-400'
+                        }`}
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </span>
+                      <span className="text-sm font-semibold leading-5 tracking-tight text-slate-800">
+                        {label}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
               {errors.activity_type && (
                 <p className="mt-2 text-xs text-red-500">{errors.activity_type.message}</p>
               )}
@@ -443,7 +514,9 @@ export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
             ? 'Saving...'
             : isEditing
             ? 'Update Activity'
-            : 'Log Activity'}
+            : selectedActivityTypes.length > 1
+              ? 'Log Activities'
+              : 'Log Activity'}
         </Button>
       </div>
     </form>

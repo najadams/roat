@@ -27,9 +27,7 @@ export const activityTypes: [ActivityType, ...ActivityType[]] = [
   'iomp_update',
 ]
 
-export const activitySchema = z.object({
-  // Zod v4: error params use 'error' instead of 'required_error'
-  activity_type: z.enum(activityTypes, 'Activity type is required'),
+const activityBaseSchema = z.object({
   // Only supplied by regional admins (officers inherit their own zone server-side)
   zonal_office: z.enum(zonalOffices).optional(),
   date: z.string().min(1, 'Date is required'),
@@ -55,5 +53,17 @@ export const activitySchema = z.object({
     .default('pending'),
 })
 
+export const activitySchema = activityBaseSchema.extend({
+  // Zod v4: error params use 'error' instead of 'required_error'
+  activity_type: z.enum(activityTypes, 'Activity type is required'),
+})
+
+export const createActivitySchema = activityBaseSchema.extend({
+  activity_types: z
+    .array(z.enum(activityTypes))
+    .min(1, 'Select at least one activity type'),
+})
+
 export type ActivityFormData = z.infer<typeof activitySchema>
 export type ActivityFormInput = z.input<typeof activitySchema>
+export type CreateActivityFormData = z.infer<typeof createActivitySchema>

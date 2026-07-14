@@ -14,7 +14,7 @@ export interface WeeklyReportCategory {
 
 export const WEEKLY_REPORT_CATEGORIES: WeeklyReportCategory[] = [
   { key: 'new_registrations',   label: 'New Investor Registrations',          types: ['new_registration'] },
-  { key: 'facilitation',        label: 'Facilitation (renewal, aftercare)',   types: ['renewal'] },
+  { key: 'facilitation',        label: 'Facilitation (renewal)',              types: ['renewal'] },
   { key: 'stakeholder',         label: 'Stakeholder Engagements',             types: ['stakeholder_engagement'] },
   { key: 'monitoring_tta',      label: 'Monitoring & TTAs',                   types: ['site_visit', 'technology_transfer_agreement'] },
   { key: 'iomp',                label: 'IOMP Data Updates',                   types: ['iomp_update'] },
@@ -35,7 +35,7 @@ export interface ThematicArea {
 
 export const THEMATIC_AREAS: ThematicArea[] = [
   { key: 'facilitation_registration', label: 'Investor Facilitation & Registration', types: ['new_registration', 'renewal', 'investor_enquiry'] },
-  { key: 'aftercare_monitoring',      label: 'Aftercare & Monitoring',               types: ['investor_issue_resolution', 'site_visit'] },
+  { key: 'aftercare_monitoring',      label: 'Investor Issue Facilitation & Monitoring', types: ['investor_issue_resolution', 'site_visit'] },
   { key: 'investment_promotion',      label: 'Investment Promotion & Local Investment Drive', types: ['outreach_promotional'] },
   { key: 'stakeholder_engagement',    label: 'Regional Stakeholder Engagement',      types: ['stakeholder_engagement'] },
   { key: 'iomp_support',              label: 'IOMP Support & Updates',               types: ['iomp_update'] },

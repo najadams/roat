@@ -20,7 +20,7 @@ export function DashboardShell({ profile, children }: DashboardShellProps) {
     <div className="flex h-screen overflow-hidden bg-slate-50">
       {/* Desktop Sidebar */}
       <div className="hidden lg:flex flex-shrink-0">
-        <Sidebar role={profile?.role} />
+        <Sidebar role={profile?.role} zonalOffice={profile?.zonal_office} />
       </div>
 
       {/* Mobile Nav */}
@@ -28,6 +28,7 @@ export function DashboardShell({ profile, children }: DashboardShellProps) {
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
         role={profile?.role}
+        zonalOffice={profile?.zonal_office}
       />
 
       {/* Main content */}

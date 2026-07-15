@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 export type PendingAlert = {
   id: string
   activity_type: string
+  detail: string | null
   company_name: string
   location: string
   date: string
@@ -29,7 +30,7 @@ export async function getStalePendingAlerts(): Promise<PendingAlert[]> {
 
   let query = supabase
     .from('activities')
-    .select('id, activity_type, company_name, location, date, zonal_office, created_at')
+    .select('id, activity_type, detail, company_name, location, date, zonal_office, created_at')
     .eq('status', 'pending')
     .is('deleted_at', null)
     .is('pending_alert_sent_at', null)

@@ -14,6 +14,11 @@ export const ACTIVITY_TYPE_LABELS: Record<string, string> = {
   iomp_update:                    'IOMP Update',
 }
 
+export const ACCRA_STORAGE_ACTIVITY_TYPE = 'outreach_promotional'
+
+export const REGIONAL_ACTIVITY_TYPE_LABELS: Record<string, string> =
+  ACTIVITY_TYPE_LABELS
+
 export const ZONAL_OFFICE_LABELS: Record<string, string> = {
   accra: 'Accra',
   kumasi: 'Kumasi',
@@ -22,6 +27,15 @@ export const ZONAL_OFFICE_LABELS: Record<string, string> = {
   techiman: 'Techiman',
   ho: 'Ho',
   koforidua: 'Koforidua',
+}
+
+export const REGIONAL_OFFICE_LABELS: Record<string, string> =
+  Object.fromEntries(
+    Object.entries(ZONAL_OFFICE_LABELS).filter(([key]) => key !== 'accra')
+  )
+
+export const SPECIAL_OFFICE_LABELS: Record<string, string> = {
+  accra: ZONAL_OFFICE_LABELS.accra,
 }
 
 export const ACTIVITY_STATUS_LABELS: Record<string, string> = {
@@ -47,6 +61,7 @@ export interface Activity {
   investment_amount: number | null
   investment_currency: string | null
   jobs_created: number | null
+  outcome: string | null
   created_by: string
   updated_by: string | null
   created_at: string

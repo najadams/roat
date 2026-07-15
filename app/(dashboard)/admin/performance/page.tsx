@@ -3,7 +3,10 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getTargetsForPeriod } from '@/actions/target.actions'
-import { ACTIVITY_TYPE_LABELS, ZONAL_OFFICE_LABELS } from '@/types/activity.types'
+import {
+  REGIONAL_ACTIVITY_TYPE_LABELS,
+  REGIONAL_OFFICE_LABELS,
+} from '@/types/activity.types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PerformancePeriodSelector } from './period-selector'
 import { getMonthOfWeek } from '@/lib/utils/date-helpers'
@@ -14,8 +17,8 @@ import { Target } from 'lucide-react'
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Performance Overview — ROAT' }
 
-const ZONES = Object.keys(ZONAL_OFFICE_LABELS) as ZonalOffice[]
-const ACTIVITY_TYPES = Object.keys(ACTIVITY_TYPE_LABELS)
+const ZONES = Object.keys(REGIONAL_OFFICE_LABELS) as ZonalOffice[]
+const ACTIVITY_TYPES = Object.keys(REGIONAL_ACTIVITY_TYPE_LABELS)
 
 function getISOWeek(date: Date): number {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
@@ -149,6 +152,7 @@ export default async function PerformancePage({
     .from('activities')
     .select('activity_type, zonal_office')
     .is('deleted_at', null)
+    .neq('zonal_office', 'accra')
     .neq('status', 'cancelled')
     .gte('date', fromDate)
     .lte('date', toDate)
@@ -182,7 +186,7 @@ export default async function PerformancePage({
     const met = typesWithTargets.filter(t => (byZone[zone][t] ?? 0) >= targets[t])
     return {
       zone,
-      label: ZONAL_OFFICE_LABELS[zone as keyof typeof ZONAL_OFFICE_LABELS],
+      label: REGIONAL_OFFICE_LABELS[zone as keyof typeof REGIONAL_OFFICE_LABELS],
       met: met.length,
       total: typesWithTargets.length,
       tier: zoneTier(met.length, typesWithTargets.length),
@@ -271,7 +275,7 @@ export default async function PerformancePage({
                       key={zone}
                       className="text-center px-4 py-3 text-xs font-semibold tracking-wide text-slate-400 uppercase whitespace-nowrap"
                     >
-                      {ZONAL_OFFICE_LABELS[zone as keyof typeof ZONAL_OFFICE_LABELS]}
+                      {REGIONAL_OFFICE_LABELS[zone as keyof typeof REGIONAL_OFFICE_LABELS]}
                     </th>
                   ))}
                 </tr>
@@ -280,7 +284,7 @@ export default async function PerformancePage({
                 {ACTIVITY_TYPES.map(type => (
                   <tr key={type} className="border-b border-slate-50 hover:bg-slate-50/50">
                     <td className="px-5 py-3.5 font-medium text-slate-700 whitespace-nowrap">
-                      {ACTIVITY_TYPE_LABELS[type]}
+                      {REGIONAL_ACTIVITY_TYPE_LABELS[type]}
                     </td>
                     {ZONES.map(zone => {
                       const actual = byZone[zone][type] ?? 0

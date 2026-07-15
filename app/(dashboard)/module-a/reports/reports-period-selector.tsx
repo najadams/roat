@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ZONAL_OFFICE_LABELS } from '@/types/activity.types'
+import { REGIONAL_OFFICE_LABELS } from '@/types/activity.types'
 
 interface ReportsPeriodSelectorProps {
   period: string
@@ -143,7 +143,7 @@ export function ReportsPeriodSelector({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all" className="text-sm">All Zones</SelectItem>
-            {Object.entries(ZONAL_OFFICE_LABELS).map(([key, label]) => (
+            {Object.entries(REGIONAL_OFFICE_LABELS).map(([key, label]) => (
               <SelectItem key={key} value={key} className="text-sm">{label}</SelectItem>
             ))}
           </SelectContent>

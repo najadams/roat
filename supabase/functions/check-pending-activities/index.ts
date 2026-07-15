@@ -35,7 +35,7 @@ Deno.serve(async () => {
     const { data: staleActivities, error: fetchError } = await supabase
       .from('activities')
       .select(`
-        id, activity_type, company_name, date, location, zonal_office,
+        id, activity_type, detail, company_name, date, location, zonal_office,
         created_at, created_by,
         profiles!activities_created_by_fkey (
           full_name, email
@@ -74,7 +74,9 @@ Deno.serve(async () => {
     // Send one email per user listing all their stale activities
     const emailPromises = Object.values(byUser).map(({ name, email, activities }) => {
       const activityList = activities.map(a => {
-        const typeLabel = ACTIVITY_TYPE_LABELS[a.activity_type] ?? a.activity_type.replace(/_/g, ' ')
+        const typeLabel = a.zonal_office === 'accra'
+          ? a.detail ?? 'Accra activity'
+          : ACTIVITY_TYPE_LABELS[a.activity_type] ?? a.activity_type.replace(/_/g, ' ')
         const daysPending = Math.floor(
           (Date.now() - new Date(a.created_at).getTime()) / (1000 * 60 * 60 * 24)
         )

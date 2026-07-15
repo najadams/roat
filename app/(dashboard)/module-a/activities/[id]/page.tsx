@@ -21,7 +21,7 @@ export default async function ActivityDetailPage({
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, zonal_office')
     .eq('id', user.id)
     .single()
 
@@ -57,7 +57,11 @@ export default async function ActivityDetailPage({
           Update the details of this activity record.
         </p>
       </div>
-      <ActivityForm activity={activity as Activity} isAdmin={isAdmin} />
+      <ActivityForm
+        activity={activity as Activity}
+        isAdmin={isAdmin}
+        userZone={profile?.zonal_office ?? null}
+      />
     </div>
   )
 }

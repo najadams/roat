@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getTargetsForPeriod } from '@/actions/target.actions'
 import { TargetsForm } from './targets-form'
+import { REGIONAL_OFFICE_LABELS } from '@/types/activity.types'
 
 export const metadata = { title: 'Activity Targets — ROAT' }
 
@@ -28,7 +29,7 @@ export default async function TargetsPage({
 
   const params = await searchParams
   const now = new Date()
-  const zone = params.zone ?? 'kumasi'
+  const zone = params.zone && params.zone in REGIONAL_OFFICE_LABELS ? params.zone : 'kumasi'
   const year = parseInt(params.year ?? String(now.getFullYear()))
   const quarter = parseInt(params.quarter ?? String(Math.floor(now.getMonth() / 3) + 1))
 

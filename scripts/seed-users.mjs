@@ -1,11 +1,15 @@
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+// Default password for all seeded accounts. Users are prompted to set their
+// own password on first login (profiles.onboarding_completed_at starts NULL).
+const DEFAULT_PASSWORD = 'roat@1234';
+
 const users = [
-  { email: 'admin@argus.gipc', password: 'Admin@Argus2026', full_name: 'Regional Admin', role: 'regional_admin', zonal_office: null },
-  { email: 'kumasi@argus.gipc', password: 'Kumasi@Argus2026', full_name: 'Kumasi Officer', role: 'zonal_officer', zonal_office: 'kumasi' },
-  { email: 'tamale@argus.gipc', password: 'Tamale@Argus2026', full_name: 'Tamale Officer', role: 'zonal_officer', zonal_office: 'tamale' },
-  { email: 'viewer@argus.gipc', password: 'Viewer@Argus2026', full_name: 'Reports Viewer', role: 'viewer', zonal_office: null },
+  { email: 'admin@argus.gipc', password: DEFAULT_PASSWORD, full_name: 'Regional Admin', role: 'regional_admin', zonal_office: null },
+  { email: 'kumasi@argus.gipc', password: DEFAULT_PASSWORD, full_name: 'Kumasi Officer', role: 'zonal_officer', zonal_office: 'kumasi' },
+  { email: 'tamale@argus.gipc', password: DEFAULT_PASSWORD, full_name: 'Tamale Officer', role: 'zonal_officer', zonal_office: 'tamale' },
+  { email: 'viewer@argus.gipc', password: DEFAULT_PASSWORD, full_name: 'Reports Viewer', role: 'viewer', zonal_office: null },
 ];
 
 const headers = {
@@ -41,35 +45,23 @@ for (const u of users) {
     });
   }
 
-  // PATCH the profile (created by the handle_new_user trigger)
-  const patchRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${uid}`, {
-    method: 'PATCH',
-    headers: { ...headers, 'Prefer': 'return=minimal' },
+  // Upsert the profile. Works whether or not a handle_new_user trigger
+  // pre-created the row — merge-duplicates resolves on the primary key (id).
+  const upsertRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
+    method: 'POST',
+    headers: { ...headers, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
     body: JSON.stringify({
+      id: uid,
+      email: u.email,
       full_name: u.full_name,
       role: u.role,
       zonal_office: u.zonal_office,
     }),
   });
 
-  if (!patchRes.ok) {
-    const e = await patchRes.text();
-    console.error(`Profile patch failed for ${u.email}:`, e);
+  if (!upsertRes.ok) {
+    console.error(`Profile upsert failed for ${u.email}:`, await upsertRes.text());
     continue;
-  }
-
-  // If trigger didn't fire (no row existed), PATCH returns 204 with 0 rows affected — insert instead
-  const contentRange = patchRes.headers.get('content-range');
-  if (contentRange === '*/0') {
-    const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
-      method: 'POST',
-      headers: { ...headers, 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ id: uid, email: u.email, full_name: u.full_name, role: u.role, zonal_office: u.zonal_office }),
-    });
-    if (!insertRes.ok) {
-      console.error(`Profile insert failed for ${u.email}:`, await insertRes.text());
-      continue;
-    }
   }
 
   console.log(`✓  ${u.email} | role: ${u.role} | zone: ${u.zonal_office ?? 'all'}`);

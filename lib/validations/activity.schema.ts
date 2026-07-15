@@ -11,6 +11,10 @@ export const zonalOffices: [ZonalOffice, ...ZonalOffice[]] = [
   'koforidua',
 ]
 
+export const regionalZonalOffices = zonalOffices.filter(
+  office => office !== 'accra'
+) as Exclude<ZonalOffice, 'accra'>[]
+
 export const activityTypes: [ActivityType, ...ActivityType[]] = [
   'investor_enquiry',
   'new_registration',
@@ -26,6 +30,8 @@ export const activityTypes: [ActivityType, ...ActivityType[]] = [
   'checkup_call',
   'iomp_update',
 ]
+
+export const regionalActivityTypes = activityTypes
 
 const PHONE_ERROR_MESSAGE = 'Enter valid phone number(s), e.g. 024 123 4567 or 0200710055/0508288446'
 
@@ -56,6 +62,7 @@ const activityBaseSchema = z.object({
   sector: z.string().optional(),
   detail: z.string().optional(),
   action_required: z.string().optional(),
+  custom_activity_description: z.string().optional(),
   outcome: z.string().optional(),
   // Investment outcomes (optional) — power the impact reporting
   investment_amount: z.preprocess(

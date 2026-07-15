@@ -27,7 +27,7 @@ const navItems = [
       { label: 'Log Activity', href: '/module-a/new' },
       { label: 'All Activities', href: '/module-a/activities' },
       { label: 'Reports', href: '/module-a/reports' },
-      { label: 'Weekly Report', href: '/module-a/weekly-report' },
+      // { label: 'Weekly Report', href: '/module-a/weekly-report' },
     ],
   },
   {
@@ -49,18 +49,28 @@ const adminItems = [
 
 interface SidebarProps {
   role?: string
+  zonalOffice?: string | null
   onClose?: () => void
 }
 
-export function Sidebar({ role, onClose }: SidebarProps) {
+export function Sidebar({ role, zonalOffice, onClose }: SidebarProps) {
   const pathname = usePathname()
 
   // Viewers are read-only — hide the "create" links (they'd only bounce back).
   const isViewer = role === 'viewer'
+  const canSeeAccraReports = role === 'regional_admin' || zonalOffice === 'accra'
   const createHrefs = ['/module-a/new', '/module-b/new']
   const visibleNav = navItems.map(item =>
     item.children
-      ? { ...item, children: item.children.filter(c => !(isViewer && createHrefs.includes(c.href))) }
+      ? {
+          ...item,
+          children: [
+            ...item.children.filter(c => !(isViewer && createHrefs.includes(c.href))),
+            ...(item.label === 'Module A' && canSeeAccraReports
+              ? [{ label: 'Accra Reports', href: '/module-a/accra-reports' }]
+              : []),
+          ],
+        }
       : item
   )
 

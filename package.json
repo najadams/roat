@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "db:clear:activities": "node scripts/clear-activities.mjs",
     "lint": "eslint"
   },
   "dependencies": {

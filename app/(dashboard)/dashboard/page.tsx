@@ -5,7 +5,11 @@ import { StatsCard } from '@/components/dashboard/StatsCard'
 import { ZonalSummaryChart } from '@/components/dashboard/ZonalSummaryChart'
 import { ActivityBreakdownChart } from '@/components/dashboard/ActivityBreakdownChart'
 import { WebinarProgressChart } from '@/components/dashboard/WebinarProgressChart'
-import { ACTIVITY_TYPE_LABELS, ZONAL_OFFICE_LABELS } from '@/types/activity.types'
+import {
+  ACTIVITY_TYPE_LABELS,
+  REGIONAL_ACTIVITY_TYPE_LABELS,
+  REGIONAL_OFFICE_LABELS,
+} from '@/types/activity.types'
 import {
   ClipboardList, Radio, CheckCircle2, AlertTriangle, TrendingUp, Globe,
   UserPlus, Clock, BarChart3,
@@ -44,6 +48,8 @@ export default async function DashboardPage() {
 
   if (profile?.role === 'zonal_officer' && profile.zonal_office) {
     activitiesQuery = activitiesQuery.eq('zonal_office', profile.zonal_office)
+  } else {
+    activitiesQuery = activitiesQuery.neq('zonal_office', 'accra')
   }
 
   const { data: activities } = await activitiesQuery
@@ -57,6 +63,8 @@ export default async function DashboardPage() {
 
   if (profile?.role === 'zonal_officer' && profile.zonal_office) {
     pendingQuery = pendingQuery.eq('zonal_office', profile.zonal_office)
+  } else {
+    pendingQuery = pendingQuery.neq('zonal_office', 'accra')
   }
   const { count: totalPending } = await pendingQuery
 
@@ -89,8 +97,10 @@ export default async function DashboardPage() {
     .sort((a, b) => b.value - a.value)
 
   // Stacked bar: ALL activity types as keys per zone
-  const activityTypeEntries = Object.entries(ACTIVITY_TYPE_LABELS)
-  const zoneChartData = Object.entries(ZONAL_OFFICE_LABELS).map(([key, label]) => {
+  const activityTypeEntries = Object.entries(
+    profile?.zonal_office === 'accra' ? ACTIVITY_TYPE_LABELS : REGIONAL_ACTIVITY_TYPE_LABELS
+  )
+  const zoneChartData = Object.entries(REGIONAL_OFFICE_LABELS).map(([key, label]) => {
     const row: ZonalData = { zone: label }
     for (const [typeKey] of activityTypeEntries) {
       row[typeKey] = byZone[key]?.[typeKey] ?? 0
@@ -101,7 +111,7 @@ export default async function DashboardPage() {
   const activityTypeDefs = activityTypeEntries.map(([key, label]) => ({ key, label }))
 
   // Zone performance table (admin only)
-  const zonePerformance = Object.entries(ZONAL_OFFICE_LABELS).map(([key, label]) => {
+  const zonePerformance = Object.entries(REGIONAL_OFFICE_LABELS).map(([key, label]) => {
     const zoneActivities = activities?.filter(a => a.zonal_office === key) ?? []
     const total     = zoneActivities.length
     const completed = zoneActivities.filter(a => a.status === 'completed').length
@@ -188,7 +198,7 @@ export default async function DashboardPage() {
             variant="success"
           />
           <StatsCard
-            title="Pending"
+            title="Pending Backlog"
             value={totalPending ?? 0}
             subtitle="Across all periods"
             icon={Clock}

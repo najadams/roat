@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getWeeklyReportData } from '@/actions/weekly-report.actions'
 import { buildWeeklyReportWorkbook } from '@/lib/utils/weekly-report-export'
-import { zonalOffices } from '@/lib/validations/activity.schema'
+import { regionalZonalOffices } from '@/lib/validations/activity.schema'
 import type { WeeklyReportData } from '@/types/weekly-report.types'
 
 function defaultWeekEnding(): string {
@@ -31,10 +31,10 @@ export async function GET(request: NextRequest) {
   let offices: string[]
   if (profile?.role === 'zonal_officer') {
     offices = profile.zonal_office ? [profile.zonal_office] : []
-  } else if (zoneParam && zoneParam !== 'all') {
+  } else if (zoneParam && zoneParam !== 'all' && regionalZonalOffices.includes(zoneParam as never)) {
     offices = [zoneParam]
   } else {
-    offices = [...zonalOffices]
+    offices = [...regionalZonalOffices]
   }
 
   const reports: WeeklyReportData[] = []

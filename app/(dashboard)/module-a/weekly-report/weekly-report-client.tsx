@@ -89,7 +89,11 @@ export function WeeklyReportClient({ data, canEdit, canPickZone }: Props) {
         <div className="flex items-end gap-3">
           {canPickZone && (
             <div className="w-40">
-              <ZoneSelector value={data.zonalOffice} onChange={z => navigate({ zone: z })} />
+              <ZoneSelector
+                value={data.zonalOffice}
+                onChange={z => navigate({ zone: z })}
+                regionalOnly
+              />
             </div>
           )}
           <Input

@@ -8,6 +8,11 @@ import type { ZonalOffice, UserRole } from '@/types/database.types'
 const zonalOffices = ['accra', 'kumasi', 'tamale', 'takoradi', 'techiman', 'ho', 'koforidua'] as const
 const productionAppUrl = 'https://roat.netlify.app'
 
+// Shared default password assigned to every invited user so they can sign in
+// immediately even if the invite email never arrives. They are still routed to
+// the Set-Password screen on first login (profiles.onboarding_completed_at is NULL).
+const DEFAULT_INVITE_PASSWORD = 'roat@1234'
+
 function getAppUrl() {
   const configuredUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.URL || productionAppUrl
 
@@ -84,6 +89,15 @@ export async function inviteUser(data: unknown) {
   )
 
   if (inviteError) return { error: inviteError.message }
+
+  // Set the shared default password and confirm the email so the user can log
+  // in with DEFAULT_INVITE_PASSWORD right away (the invite email link still
+  // works for setting their own password if it arrives).
+  const { error: passwordError } = await admin.auth.admin.updateUserById(invited.user.id, {
+    password: DEFAULT_INVITE_PASSWORD,
+    email_confirm: true,
+  })
+  if (passwordError) return { error: passwordError.message }
 
   const zonalOffice = parsed.data.role === 'zonal_officer'
     ? parsed.data.zonal_office!
@@ -174,6 +188,45 @@ export async function updateUserProfile(userId: string, data: unknown) {
 
   revalidatePath('/admin/users')
   return { success: true }
+}
+
+export async function resetUserPassword(userId: string) {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: callerProfile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (callerProfile?.role !== 'regional_admin') {
+    return { error: 'Permission denied' }
+  }
+
+  const admin = createAdminClient()
+
+  // Reset to the shared default password and confirm the email so the user can
+  // sign in immediately.
+  const { error: passwordError } = await admin.auth.admin.updateUserById(userId, {
+    password: DEFAULT_INVITE_PASSWORD,
+    email_confirm: true,
+  })
+  if (passwordError) return { error: passwordError.message }
+
+  // Force the user to choose a new password on their next login.
+  const { error: profileError } = await admin
+    .from('profiles')
+    .update({ onboarding_completed_at: null })
+    .eq('id', userId)
+  if (profileError) return { error: profileError.message }
+
+  revalidatePath('/admin/users')
+  return { success: true, defaultPassword: DEFAULT_INVITE_PASSWORD }
 }
 
 export async function getCurrentProfile() {

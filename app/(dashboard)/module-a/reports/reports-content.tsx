@@ -3,13 +3,27 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ExportButton } from '@/components/shared/ExportButton'
 import { ActivityBreakdownChart } from '@/components/dashboard/ActivityBreakdownChart'
 import { ZonalSummaryChart } from '@/components/dashboard/ZonalSummaryChart'
-import { ACTIVITY_TYPE_LABELS, ZONAL_OFFICE_LABELS } from '@/types/activity.types'
+import {
+  ACTIVITY_TYPE_LABELS,
+  REGIONAL_ACTIVITY_TYPE_LABELS,
+  REGIONAL_OFFICE_LABELS,
+} from '@/types/activity.types'
 import type { Database, ZonalOffice } from '@/types/database.types'
 import { ReportsPeriodSelector } from './reports-period-selector'
 import { getTargetsForPeriod } from '@/actions/target.actions'
 import { getMonthOfWeek, getReportRange } from '@/lib/utils/date-helpers'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
+type ReportActivity = {
+  activity_type: string
+  zonal_office: string
+  status: string
+  date: string
+  company_name: string
+  investment_amount: number | null
+  investment_currency: string | null
+  jobs_created: number | null
+}
 
 interface ReportsContentProps {
   profile: Profile | null
@@ -30,6 +44,21 @@ function getISOWeek(date: Date): number {
   return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7)
 }
 
+function normalizeCompanyName(name: string) {
+  return name.trim().replace(/\s+/g, ' ').toLowerCase()
+}
+
+function getImpactKey(activity: ReportActivity) {
+  return [
+    normalizeCompanyName(activity.company_name),
+    activity.date,
+    activity.zonal_office,
+    activity.investment_currency ?? '',
+    activity.investment_amount ?? '',
+    activity.jobs_created ?? '',
+  ].join('|')
+}
+
 export async function ReportsContent({ profile, searchParams }: ReportsContentProps) {
   const supabase = await createClient()
   const period = (searchParams.period ?? 'monthly') as 'weekly' | 'monthly' | 'quarterly' | 'annual'
@@ -45,8 +74,9 @@ export async function ReportsContent({ profile, searchParams }: ReportsContentPr
 
   let query = supabase
     .from('activities')
-    .select('activity_type, zonal_office, status, date, investment_amount, investment_currency, jobs_created')
+    .select('activity_type, zonal_office, status, date, company_name, investment_amount, investment_currency, jobs_created')
     .is('deleted_at', null)
+    .neq('zonal_office', 'accra')
     .neq('status', 'cancelled')
     .gte('date', fromDate)
     .lte('date', toDate)
@@ -56,60 +86,83 @@ export async function ReportsContent({ profile, searchParams }: ReportsContentPr
   }
 
   const { data: activities } = await query
+  const activityRows = (activities ?? []) as ReportActivity[]
 
   // Aggregate by type
   const byType: Record<string, number> = {}
   const byZone: Record<string, Record<string, number>> = {}
 
-  for (const a of activities ?? []) {
+  for (const a of activityRows) {
     byType[a.activity_type] = (byType[a.activity_type] ?? 0) + 1
 
     if (!byZone[a.zonal_office]) byZone[a.zonal_office] = {}
     byZone[a.zonal_office][a.activity_type] = (byZone[a.zonal_office][a.activity_type] ?? 0) + 1
   }
 
-  const typeChartData = Object.entries(byType).map(([type, count]) => ({
-    name: ACTIVITY_TYPE_LABELS[type] ?? type,
-    value: count,
-  }))
+  const typeChartData = Object.entries(byType)
+    .filter(([type]) => type in REGIONAL_ACTIVITY_TYPE_LABELS)
+    .map(([type, count]) => ({
+      name: ACTIVITY_TYPE_LABELS[type] ?? type,
+      value: count,
+    }))
+    .sort((a, b) => b.value - a.value)
 
   // Always show all 9 types (zeros included) for the summary table
-  const typeTableData = Object.entries(ACTIVITY_TYPE_LABELS).map(([key, label]) => ({
+  const typeTableData = Object.entries(REGIONAL_ACTIVITY_TYPE_LABELS).map(([key, label]) => ({
     name: label,
     value: byType[key] ?? 0,
   })).sort((a, b) => b.value - a.value)
 
-  const zoneChartData = Object.entries(ZONAL_OFFICE_LABELS).map(([key, label]) => ({
-    zone: label,
-    new_registration: byZone[key]?.new_registration ?? 0,
-    site_visit: byZone[key]?.site_visit ?? 0,
-    stakeholder_engagement: byZone[key]?.stakeholder_engagement ?? 0,
-    total: Object.values(byZone[key] ?? {}).reduce((a, b) => a + b, 0),
-  }))
+  const activityTypeEntries = Object.entries(REGIONAL_ACTIVITY_TYPE_LABELS)
+  const zoneChartData = Object.entries(REGIONAL_OFFICE_LABELS).map(([key, label]) => {
+    const row: { zone: string; total: number; [key: string]: number | string } = {
+      zone: label,
+      total: Object.values(byZone[key] ?? {}).reduce((a, b) => a + b, 0),
+    }
 
-  const total = activities?.length ?? 0
-  const completed = activities?.filter(a => a.status === 'completed').length ?? 0
+    for (const [typeKey] of activityTypeEntries) {
+      row[typeKey] = byZone[key]?.[typeKey] ?? 0
+    }
+
+    return row
+  })
+
+  const total = activityRows.length
+  const completed = activityRows.filter(a => a.status === 'completed').length
   const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0
+  const uniqueCompanies = new Set(
+    activityRows.map(a => normalizeCompanyName(a.company_name)).filter(Boolean)
+  ).size
 
   // ── Investment impact ──────────────────────────────────────────────────────
-  // Sum investment per currency (mixing currencies in one total would mislead)
+  // Sum investment per currency, deduplicating multi-activity rows logged for
+  // the same company interaction. Mixing currencies in one total would mislead.
   const investmentByCurrency: Record<string, number> = {}
   let totalJobs = 0
-  for (const a of activities ?? []) {
-    if (a.investment_amount) {
+  const countedImpactKeys = new Set<string>()
+  for (const a of activityRows) {
+    const hasImpact = a.investment_amount != null || (a.jobs_created ?? 0) > 0
+    if (!hasImpact) continue
+
+    const impactKey = getImpactKey(a)
+    if (countedImpactKeys.has(impactKey)) continue
+    countedImpactKeys.add(impactKey)
+
+    if (a.investment_amount != null) {
       const cur = a.investment_currency ?? 'USD'
       investmentByCurrency[cur] = (investmentByCurrency[cur] ?? 0) + a.investment_amount
     }
     totalJobs += a.jobs_created ?? 0
   }
   const investmentEntries = Object.entries(investmentByCurrency).sort((a, b) => b[1] - a[1])
+  const impactRecords = countedImpactKeys.size
 
   const isAdmin = profile?.role === 'regional_admin'
 
   // Determine the single zone in scope (needed to show targets)
   const scopedZone = profile?.role === 'zonal_officer'
     ? profile.zonal_office
-    : (zone && zone !== 'all' ? zone : null)
+    : (zone && zone !== 'all' && zone !== 'accra' ? zone : null)
 
   // Resolve the active quarter for the target label
   const activeQuarter =
@@ -158,15 +211,27 @@ export async function ReportsContent({ profile, searchParams }: ReportsContentPr
       />
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <Card className="border-slate-100 shadow-sm">
           <CardHeader className="pb-2 pt-5 px-5">
             <CardTitle className="text-xs font-semibold tracking-widest uppercase text-slate-400">
-              Total Activities
+              Activity Entries
             </CardTitle>
           </CardHeader>
           <CardContent className="px-5 pb-5">
             <p className="text-3xl font-semibold text-slate-900">{total}</p>
+            <p className="mt-1 text-xs text-slate-400">Rows logged for the selected period</p>
+          </CardContent>
+        </Card>
+        <Card className="border-slate-100 shadow-sm">
+          <CardHeader className="pb-2 pt-5 px-5">
+            <CardTitle className="text-xs font-semibold tracking-widest uppercase text-slate-400">
+              Companies Served
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-5 pb-5">
+            <p className="text-3xl font-semibold text-slate-900">{uniqueCompanies}</p>
+            <p className="mt-1 text-xs text-slate-400">Unique organisations in scope</p>
           </CardContent>
         </Card>
         <Card className="border-slate-100 shadow-sm">
@@ -177,6 +242,7 @@ export async function ReportsContent({ profile, searchParams }: ReportsContentPr
           </CardHeader>
           <CardContent className="px-5 pb-5">
             <p className="text-3xl font-semibold text-emerald-600">{completed}</p>
+            <p className="mt-1 text-xs text-slate-400">Completed activity entries</p>
           </CardContent>
         </Card>
         <Card className="border-slate-100 shadow-sm">
@@ -187,6 +253,7 @@ export async function ReportsContent({ profile, searchParams }: ReportsContentPr
           </CardHeader>
           <CardContent className="px-5 pb-5">
             <p className="text-3xl font-semibold text-slate-900">{completionRate}%</p>
+            <p className="mt-1 text-xs text-slate-400">{completed} of {total} entries completed</p>
           </CardContent>
         </Card>
       </div>
@@ -228,9 +295,17 @@ export async function ReportsContent({ profile, searchParams }: ReportsContentPr
                 {totalJobs.toLocaleString('en-GB')}
               </p>
             </div>
+            <div className="rounded-lg border border-slate-100 p-4">
+              <p className="text-xs font-semibold tracking-widest uppercase text-slate-400">
+                Impact Records
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900">
+                {impactRecords.toLocaleString('en-GB')}
+              </p>
+            </div>
           </div>
           <p className="mt-3 text-xs text-slate-400">
-            Aggregated from activities in this period. Values are grouped by their recorded currency.
+            Impact values are deduplicated by company, date, zone, currency, investment value, and jobs so multi-activity logs do not overstate totals.
           </p>
         </CardContent>
       </Card>
@@ -258,11 +333,7 @@ export async function ReportsContent({ profile, searchParams }: ReportsContentPr
             <CardContent className="pt-4">
               <ZonalSummaryChart
                 data={zoneChartData}
-                activityTypes={[
-                  { key: 'new_registration', label: 'New Registration' },
-                  { key: 'site_visit', label: 'Site Visit' },
-                  { key: 'stakeholder_engagement', label: 'Stakeholder Engagement' },
-                ]}
+                activityTypes={activityTypeEntries.map(([key, label]) => ({ key, label }))}
               />
             </CardContent>
           </Card>
@@ -295,7 +366,7 @@ export async function ReportsContent({ profile, searchParams }: ReportsContentPr
               </thead>
               <tbody>
                 {typeTableData.map(item => {
-                  const typeKey = Object.entries(ACTIVITY_TYPE_LABELS).find(([, v]) => v === item.name)?.[0]
+                  const typeKey = Object.entries(REGIONAL_ACTIVITY_TYPE_LABELS).find(([, v]) => v === item.name)?.[0]
                   const target = typeKey ? (targetsByType[typeKey] ?? null) : null
                   const pct = target && target > 0 ? Math.min(Math.round((item.value / target) * 100), 100) : null
                   const overPct = target && target > 0 ? Math.round((item.value / target) * 100) : null

@@ -14,16 +14,20 @@ interface ZoneSelectorProps {
   onChange: (value: string) => void
   includeAll?: boolean
   placeholder?: string
+  regionalOnly?: boolean
 }
-
-const zones = Object.entries(ZONAL_OFFICE_LABELS)
 
 export function ZoneSelector({
   value,
   onChange,
   includeAll = false,
   placeholder = 'Select zone',
+  regionalOnly = false,
 }: ZoneSelectorProps) {
+  const zones = Object.entries(ZONAL_OFFICE_LABELS).filter(([key]) =>
+    regionalOnly ? key !== 'accra' : true
+  )
+
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className="h-10 text-sm border-slate-200">

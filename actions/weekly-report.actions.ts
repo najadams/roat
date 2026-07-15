@@ -45,6 +45,7 @@ export async function upsertWeeklyReport(formData: unknown) {
     ? parsed.data.zonal_office
     : profile.zonal_office
   if (!zone) return { error: 'No zonal office resolved for this report' }
+  if (zone === 'accra') return { error: 'Use Accra Reports for Accra activity tracking' }
 
   const { error } = await supabase
     .from('weekly_reports')
@@ -87,6 +88,7 @@ export async function upsertWeeklyCategoryTargets(
 
   const zone = profile.role === 'regional_admin' ? zonalOffice : profile.zonal_office
   if (!zone) return { error: 'No zonal office resolved' }
+  if (zone === 'accra') return { error: 'Weekly category targets are not used for Accra reports' }
 
   // Targets with a value are upserted; zeros/blanks are cleared.
   const toUpsert = entries.filter(e => e.target_count > 0)
@@ -130,6 +132,7 @@ export async function getWeeklyReportData(
   if (!user) return { error: 'Not authenticated' }
 
   const zone = zonalOffice as ZonalOffice
+  if (zone === 'accra') return { error: 'Use Accra Reports for Accra activity tracking' }
   const { from, to } = weekWindow(weekEnding)
   const endDate = new Date(weekEnding + 'T00:00:00')
   const year = endDate.getFullYear()

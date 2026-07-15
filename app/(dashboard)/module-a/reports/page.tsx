@@ -30,6 +30,10 @@ export default async function ReportsPage({ searchParams }: PageProps) {
     .eq('id', user.id)
     .single()
 
+  if (profileData?.role === 'zonal_officer' && profileData.zonal_office === 'accra') {
+    redirect('/module-a/accra-reports')
+  }
+
   return (
     <Suspense fallback={<div className="space-y-4"><Skeleton className="h-32 w-full" /><Skeleton className="h-64 w-full" /></div>}>
       <ReportsContent profile={profileData} searchParams={params} />

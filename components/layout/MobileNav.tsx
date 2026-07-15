@@ -9,9 +9,10 @@ interface MobileNavProps {
   open: boolean
   onClose: () => void
   role?: string
+  zonalOffice?: string | null
 }
 
-export function MobileNav({ open, onClose, role }: MobileNavProps) {
+export function MobileNav({ open, onClose, role, zonalOffice }: MobileNavProps) {
   // Close on ESC
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
@@ -46,7 +47,7 @@ export function MobileNav({ open, onClose, role }: MobileNavProps) {
           >
             <X className="h-5 w-5" />
           </button>
-          <Sidebar role={role} onClose={onClose} />
+          <Sidebar role={role} zonalOffice={zonalOffice} onClose={onClose} />
         </div>
       </div>
     </>

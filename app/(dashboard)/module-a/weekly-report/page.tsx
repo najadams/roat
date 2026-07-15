@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getWeeklyReportData } from '@/actions/weekly-report.actions'
 import { WeeklyReportClient } from './weekly-report-client'
+import { REGIONAL_OFFICE_LABELS } from '@/types/activity.types'
 import type { WeeklyReportData } from '@/types/weekly-report.types'
 
 export const metadata = { title: 'Weekly Report — ROAT' }
@@ -34,11 +35,15 @@ export default async function WeeklyReportPage({ searchParams }: PageProps) {
   const isAdmin = profile?.role === 'regional_admin'
   const isViewer = profile?.role === 'viewer'
 
+  if (profile?.role === 'zonal_officer' && profile.zonal_office === 'accra') {
+    redirect('/module-a/accra-reports')
+  }
+
   // Officers + viewers are scoped to their own zone; admins/viewers may pick.
   const zone =
     profile?.role === 'zonal_officer'
-      ? profile.zonal_office ?? 'accra'
-      : (params.zone ?? 'accra')
+      ? profile.zonal_office ?? 'kumasi'
+      : (params.zone && params.zone in REGIONAL_OFFICE_LABELS ? params.zone : 'kumasi')
   const weekEnding = params.week ?? defaultWeekEnding()
 
   const data = await getWeeklyReportData(zone, weekEnding)

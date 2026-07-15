@@ -12,7 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ACTIVITY_TYPE_LABELS, ZONAL_OFFICE_LABELS } from '@/types/activity.types'
+import {
+  REGIONAL_ACTIVITY_TYPE_LABELS,
+  REGIONAL_OFFICE_LABELS,
+} from '@/types/activity.types'
 import { upsertTargets, getTargetsForPeriod } from '@/actions/target.actions'
 import { cn } from '@/lib/utils/cn'
 
@@ -25,7 +28,7 @@ interface TargetsFormProps {
 
 const currentYear = new Date().getFullYear()
 const YEARS = [currentYear - 2, currentYear - 1, currentYear, currentYear + 1]
-const activityTypes = Object.keys(ACTIVITY_TYPE_LABELS)
+const activityTypes = Object.keys(REGIONAL_ACTIVITY_TYPE_LABELS)
 
 export function TargetsForm({
   initialZone,
@@ -118,7 +121,7 @@ export function TargetsForm({
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3">
-            {Object.entries(ZONAL_OFFICE_LABELS).map(([key, label]) => (
+            {Object.entries(REGIONAL_OFFICE_LABELS).map(([key, label]) => (
               <label key={key} className="flex items-center gap-2 cursor-pointer group">
                 <div
                   className={cn(
@@ -201,7 +204,7 @@ export function TargetsForm({
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-xs font-semibold tracking-widest uppercase text-slate-400">
-              Targets — {ZONAL_OFFICE_LABELS[zone as keyof typeof ZONAL_OFFICE_LABELS]} &middot; Q{quarter} {year}
+              Targets — {REGIONAL_OFFICE_LABELS[zone as keyof typeof REGIONAL_OFFICE_LABELS]} &middot; Q{quarter} {year}
             </CardTitle>
             <p className="text-xs text-slate-400">Leave blank for no target</p>
           </div>
@@ -216,7 +219,7 @@ export function TargetsForm({
             {activityTypes.map(type => (
               <div key={type} className="flex items-center justify-between py-3">
                 <span className="text-sm font-medium text-slate-700">
-                  {ACTIVITY_TYPE_LABELS[type]}
+                  {REGIONAL_ACTIVITY_TYPE_LABELS[type]}
                 </span>
                 <Input
                   type="number"

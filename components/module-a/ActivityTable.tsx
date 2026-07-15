@@ -81,7 +81,9 @@ export function ActivityTable({ activities, showZone = false, canDelete = false 
                   {formatDate(activity.date)}
                 </TableCell>
                 <TableCell className="text-sm font-medium text-slate-900 py-3.5">
-                  {ACTIVITY_TYPE_LABELS[activity.activity_type] ?? activity.activity_type}
+                  {activity.zonal_office === 'accra'
+                    ? activity.detail ?? 'Accra activity'
+                    : ACTIVITY_TYPE_LABELS[activity.activity_type] ?? activity.activity_type}
                 </TableCell>
                 {showZone && (
                   <TableCell className="text-sm text-slate-600 py-3.5">

@@ -1,14 +1,18 @@
 'use client'
 
 import { useForm } from 'react-hook-form'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { activitySchema, type ActivityFormData, type ActivityFormInput } from '@/lib/validations/activity.schema'
 import { createActivity, updateActivity, addActivityAttachments, getActivityAttachments } from '@/actions/activity.actions'
 import { createClient } from '@/lib/supabase/client'
-import { ACTIVITY_TYPE_LABELS } from '@/types/activity.types'
+import {
+  ACCRA_STORAGE_ACTIVITY_TYPE,
+  ACTIVITY_TYPE_LABELS,
+  REGIONAL_ACTIVITY_TYPE_LABELS,
+} from '@/types/activity.types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -30,6 +34,7 @@ import { Check } from 'lucide-react'
 interface ActivityFormProps {
   activity?: Activity
   isAdmin?: boolean
+  userZone?: string | null
 }
 
 const ACTIVITY_STATUSES = [
@@ -46,8 +51,11 @@ const SECTORS = [
 ]
 
 type ActivityTypeValue = ActivityFormData['activity_type']
+const ACCRA_DEFAULT_COMPANY = 'Accra Operations'
+const ACCRA_DEFAULT_LOCATION = 'Accra'
+const todayString = () => new Date().toISOString().slice(0, 10)
 
-export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
+export function ActivityForm({ activity, isAdmin = false, userZone = null }: ActivityFormProps) {
   const router = useRouter()
   const isEditing = !!activity
   const fieldsLocked = isEditing && !isAdmin
@@ -59,6 +67,7 @@ export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
     register,
     handleSubmit,
     setValue,
+    getValues,
     watch,
     formState: { errors, isSubmitting },
   } = useForm<ActivityFormInput, unknown, ActivityFormData>({
@@ -75,6 +84,7 @@ export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
           sector: activity.sector ?? '',
           detail: activity.detail ?? '',
           action_required: activity.action_required ?? '',
+          custom_activity_description: activity.detail ?? '',
           outcome: activity.outcome ?? '',
           investment_amount: activity.investment_amount ?? '',
           investment_currency: activity.investment_currency ?? 'USD',
@@ -92,6 +102,13 @@ export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
   const selectedType = watch('activity_type')
   const selectedStatus = watch('status')
   const selectedZone = watch('zonal_office')
+  const wasAccraMode = useRef(false)
+  const effectiveZone = isEditing
+    ? activity.zonal_office
+    : isAdmin
+      ? selectedZone
+      : userZone
+  const isAccraMode = effectiveZone === 'accra'
 
   // Evidence files
   const [files, setFiles] = useState<File[]>([])
@@ -100,6 +117,40 @@ export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
   useEffect(() => {
     if (activity?.id) getActivityAttachments(activity.id).then(setExisting)
   }, [activity?.id])
+
+  useEffect(() => {
+    if (isAccraMode) {
+      const accraType = ACCRA_STORAGE_ACTIVITY_TYPE as ActivityTypeValue
+      if (selectedActivityTypes.length !== 1 || selectedActivityTypes[0] !== accraType) {
+        setSelectedActivityTypes([accraType])
+      }
+      setValue('activity_type', ACCRA_STORAGE_ACTIVITY_TYPE as ActivityTypeValue, { shouldValidate: true })
+      setValue('investment_amount', undefined, { shouldValidate: true })
+      setValue('investment_currency', '', { shouldValidate: true })
+      setValue('jobs_created', undefined, { shouldValidate: true })
+      setValue('date', activity?.date ?? todayString(), { shouldValidate: true })
+      setValue('company_name', activity?.company_name ?? ACCRA_DEFAULT_COMPANY, { shouldValidate: true })
+      setValue('location', activity?.location ?? ACCRA_DEFAULT_LOCATION, { shouldValidate: true })
+      setValue('telephone', activity?.telephone ?? '', { shouldValidate: true })
+      setValue('email', activity?.email ?? '', { shouldValidate: true })
+      setValue('sector', activity?.sector ?? '', { shouldValidate: true })
+      setValue('detail', activity?.detail ?? '', { shouldValidate: true })
+      setValue('action_required', activity?.action_required ?? '', { shouldValidate: true })
+      setValue('outcome', activity?.outcome ?? '', { shouldValidate: true })
+      wasAccraMode.current = true
+      return
+    }
+
+    if (wasAccraMode.current) {
+      setSelectedActivityTypes([])
+      setValue('activity_type', undefined as unknown as ActivityTypeValue, { shouldValidate: true })
+      wasAccraMode.current = false
+    }
+    if (!isEditing) {
+      if (getValues('company_name') === ACCRA_DEFAULT_COMPANY) setValue('company_name', '', { shouldValidate: true })
+      if (getValues('location') === ACCRA_DEFAULT_LOCATION) setValue('location', '', { shouldValidate: true })
+    }
+  }, [activity, getValues, isAccraMode, isEditing, selectedActivityTypes, setValue])
 
   function toggleActivityType(value: ActivityTypeValue) {
     const next = selectedActivityTypes.includes(value)
@@ -137,9 +188,20 @@ export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
   }
 
   async function onSubmit(data: ActivityFormData) {
+    const payload = isAccraMode
+      ? {
+          ...data,
+          activity_type: ACCRA_STORAGE_ACTIVITY_TYPE as ActivityFormData['activity_type'],
+          activity_types: [ACCRA_STORAGE_ACTIVITY_TYPE],
+          date: data.date || todayString(),
+          company_name: data.company_name || ACCRA_DEFAULT_COMPANY,
+          location: data.location || ACCRA_DEFAULT_LOCATION,
+        }
+      : { ...data, activity_types: selectedActivityTypes }
+
     const result = isEditing
-      ? await updateActivity(activity.id, data)
-      : await createActivity({ ...data, activity_types: selectedActivityTypes })
+      ? await updateActivity(activity.id, payload)
+      : await createActivity(payload)
 
     if (result.error) {
       if (typeof result.error === 'string') {
@@ -171,20 +233,44 @@ export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Activity Type */}
+      {/* Activity Type / Accra Description */}
       <Card className="border-slate-100 shadow-sm">
         <CardHeader className="pb-4">
           <CardTitle className="text-base font-semibold text-slate-900 tracking-tight">
-            Activity Type
+            {isAccraMode ? 'Activity Description' : 'Activity Type'}
           </CardTitle>
           <CardDescription className="text-sm text-slate-500">
-            {isEditing
-              ? 'Select the category that best describes this activity.'
-              : 'Select every activity completed for this company.'}
+            {isAccraMode
+              ? 'Describe the Accra activity in clear operational terms.'
+              : isEditing
+                ? 'Select the category that best describes this activity.'
+                : 'Select every activity completed for this company.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {fieldsLocked ? (
+          {isAccraMode ? (
+            fieldsLocked ? (
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                <p className="text-sm leading-6 text-slate-700">
+                  {activity!.detail}
+                </p>
+                <p className="mt-2 text-xs text-slate-400">(locked)</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Textarea
+                  id="custom_activity_description"
+                  rows={5}
+                  placeholder="Describe the activity, engagement, issue handled, or support provided by the Accra team."
+                  {...register('custom_activity_description')}
+                  className="text-sm border-slate-200 leading-6"
+                />
+                {errors.custom_activity_description && (
+                  <p className="text-xs text-red-500">{errors.custom_activity_description.message}</p>
+                )}
+              </div>
+            )
+          ) : fieldsLocked ? (
             <div className="flex items-center gap-2 px-3.5 py-3 rounded-lg border border-slate-200 bg-slate-50 w-fit">
               <span className="text-sm font-medium text-slate-800">
                 {ACTIVITY_TYPE_LABELS[activity!.activity_type]}
@@ -198,7 +284,7 @@ export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
                 onValueChange={val => setValue('activity_type', val as ActivityFormData['activity_type'])}
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
               >
-                {Object.entries(ACTIVITY_TYPE_LABELS).map(([value, label]) => (
+                {Object.entries(REGIONAL_ACTIVITY_TYPE_LABELS).map(([value, label]) => (
                   <label
                     key={value}
                     className={`flex items-center gap-3 p-3.5 rounded-lg border cursor-pointer transition-colors ${
@@ -224,7 +310,7 @@ export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
                   : `${selectedActivityTypes.length} selected`}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {Object.entries(ACTIVITY_TYPE_LABELS).map(([value, label]) => {
+                {Object.entries(REGIONAL_ACTIVITY_TYPE_LABELS).map(([value, label]) => {
                   const typedValue = value as ActivityTypeValue
                   const selected = selectedActivityTypes.includes(typedValue)
 
@@ -291,266 +377,269 @@ export function ActivityForm({ activity, isAdmin = false }: ActivityFormProps) {
         </Card>
       )}
 
-      {/* Core Details */}
-      <Card className="border-slate-100 shadow-sm">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-base font-semibold text-slate-900 tracking-tight">
-            Core Details
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div className="space-y-2">
-              <Label htmlFor="date" className="text-sm font-medium text-slate-700">
-                Date <span className="text-red-500">*</span>
-              </Label>
-              {fieldsLocked ? (
-                <div className="flex items-center gap-2 h-10 px-3 rounded-md border border-slate-200 bg-slate-50">
-                  <span className="text-sm text-slate-700">{activity!.date}</span>
-                  <span className="text-xs text-slate-400">(locked)</span>
-                </div>
-              ) : (
-                <>
-                  <Input
-                    id="date"
-                    type="date"
-                    {...register('date')}
-                    className="h-10 text-sm border-slate-200"
-                  />
-                  {errors.date && (
-                    <p className="text-xs text-red-500">{errors.date.message}</p>
-                  )}
-                </>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="sector" className="text-sm font-medium text-slate-700">
-                Sector
-              </Label>
-              <Select value={watch('sector')} onValueChange={val => setValue('sector', val)}>
-                <SelectTrigger className="h-10 text-sm border-slate-200">
-                  <SelectValue placeholder="Select sector" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SECTORS.map(s => (
-                    <SelectItem key={s} value={s} className="text-sm">{s}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="company_name" className="text-sm font-medium text-slate-700">
-              Company / Organisation Name <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="company_name"
-              {...register('company_name')}
-              placeholder="Enter company or organisation name"
-              className="h-10 text-sm border-slate-200"
-            />
-            {errors.company_name && (
-              <p className="text-xs text-red-500">{errors.company_name.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="location" className="text-sm font-medium text-slate-700">
-              Location <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="location"
-              {...register('location')}
-              placeholder="City or address"
-              className="h-10 text-sm border-slate-200"
-            />
-            {errors.location && (
-              <p className="text-xs text-red-500">{errors.location.message}</p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div className="space-y-2">
-              <Label htmlFor="telephone" className="text-sm font-medium text-slate-700">
-                Telephone
-              </Label>
-              <Input
-                id="telephone"
-                type="tel"
-                {...register('telephone')}
-                placeholder="+233 xx xxx xxxx"
-                className="h-10 text-sm border-slate-200"
-              />
-              {errors.telephone && (
-                <p className="text-xs text-red-500">{errors.telephone.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-slate-700">
-                Email Address
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                {...register('email')}
-                placeholder="contact@company.com"
-                className="h-10 text-sm border-slate-200"
-              />
-              {errors.email && (
-                <p className="text-xs text-red-500">{errors.email.message}</p>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Investment Outcome */}
-      <Card className="border-slate-100 shadow-sm">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-base font-semibold text-slate-900 tracking-tight">
-            Investment Outcome
-          </CardTitle>
-          <CardDescription className="text-sm text-slate-500">
-            Optional — record the investment value and jobs linked to this activity.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-            <div className="space-y-2">
-              <Label htmlFor="investment_amount" className="text-sm font-medium text-slate-700">
-                Investment Value
-              </Label>
-              <Input
-                id="investment_amount"
-                type="number"
-                min="0"
-                step="any"
-                {...register('investment_amount')}
-                placeholder="0.00"
-                className="h-10 text-sm border-slate-200"
-              />
-              {errors.investment_amount && (
-                <p className="text-xs text-red-500">{errors.investment_amount.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="investment_currency" className="text-sm font-medium text-slate-700">
-                Currency
-              </Label>
-              <Select
-                value={watch('investment_currency')}
-                onValueChange={val => setValue('investment_currency', val)}
-              >
-                <SelectTrigger className="h-10 text-sm border-slate-200">
-                  <SelectValue placeholder="Currency" />
-                </SelectTrigger>
-                <SelectContent>
-                  {['USD', 'GHS', 'EUR', 'GBP'].map(c => (
-                    <SelectItem key={c} value={c} className="text-sm">{c}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="jobs_created" className="text-sm font-medium text-slate-700">
-                Jobs Created
-              </Label>
-              <Input
-                id="jobs_created"
-                type="number"
-                min="0"
-                step="1"
-                {...register('jobs_created')}
-                placeholder="0"
-                className="h-10 text-sm border-slate-200"
-              />
-              {errors.jobs_created && (
-                <p className="text-xs text-red-500">{errors.jobs_created.message}</p>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Notes & Actions */}
-      <Card className="border-slate-100 shadow-sm">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-base font-semibold text-slate-900 tracking-tight">
-            Notes & Follow-up
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="detail" className="text-sm font-medium text-slate-700">
-              Detail / Summary
-            </Label>
-            <Textarea
-              id="detail"
-              {...register('detail')}
-              placeholder="Describe the activity in detail..."
-              rows={4}
-              className="text-sm border-slate-200 resize-none"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="action_required" className="text-sm font-medium text-slate-700">
-              Action Required
-            </Label>
-            <Textarea
-              id="action_required"
-              {...register('action_required')}
-              placeholder="Any follow-up actions needed..."
-              rows={3}
-              className="text-sm border-slate-200 resize-none"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="outcome" className="text-sm font-medium text-slate-700">
-              Outcome
-            </Label>
-            <Textarea
-              id="outcome"
-              {...register('outcome')}
-              placeholder="Result / outcome of this activity (for the weekly report)..."
-              rows={3}
-              className="text-sm border-slate-200 resize-none"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="evidence" className="text-sm font-medium text-slate-700">
-              Evidence (Photos / Documents) <span className="font-normal text-slate-400">— optional</span>
-            </Label>
-            {existing.length > 0 && (
-              <ul className="space-y-1">
-                {existing.map(a => (
-                  <li key={a.id} className="text-sm">
-                    {a.url ? (
-                      <a href={a.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                        {a.name}
-                      </a>
-                    ) : (
-                      <span className="text-slate-600">{a.name}</span>
+      {!isAccraMode && (
+        <Card className="border-slate-100 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base font-semibold text-slate-900 tracking-tight">
+              Core Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="space-y-2">
+                <Label htmlFor="date" className="text-sm font-medium text-slate-700">
+                  Date <span className="text-red-500">*</span>
+                </Label>
+                {fieldsLocked ? (
+                  <div className="flex items-center gap-2 h-10 px-3 rounded-md border border-slate-200 bg-slate-50">
+                    <span className="text-sm text-slate-700">{activity!.date}</span>
+                    <span className="text-xs text-slate-400">(locked)</span>
+                  </div>
+                ) : (
+                  <>
+                    <Input
+                      id="date"
+                      type="date"
+                      {...register('date')}
+                      className="h-10 text-sm border-slate-200"
+                    />
+                    {errors.date && (
+                      <p className="text-xs text-red-500">{errors.date.message}</p>
                     )}
-                  </li>
-                ))}
-              </ul>
-            )}
-            <Input
-              id="evidence"
-              type="file"
-              multiple
-              accept="image/*,application/pdf"
-              onChange={e => setFiles(Array.from(e.target.files ?? []))}
-              className="h-auto py-2 text-sm border-slate-200"
-            />
-            {files.length > 0 && (
-              <p className="text-xs text-slate-500">{files.length} file(s) ready to upload on save</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+                  </>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="sector" className="text-sm font-medium text-slate-700">
+                  Sector
+                </Label>
+                <Select value={watch('sector')} onValueChange={val => setValue('sector', val)}>
+                  <SelectTrigger className="h-10 text-sm border-slate-200">
+                    <SelectValue placeholder="Select sector" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SECTORS.map(s => (
+                      <SelectItem key={s} value={s} className="text-sm">{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="company_name" className="text-sm font-medium text-slate-700">
+                Company / Organisation Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="company_name"
+                {...register('company_name')}
+                placeholder="Enter company or organisation name"
+                className="h-10 text-sm border-slate-200"
+              />
+              {errors.company_name && (
+                <p className="text-xs text-red-500">{errors.company_name.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="location" className="text-sm font-medium text-slate-700">
+                Location <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="location"
+                {...register('location')}
+                placeholder="City or address"
+                className="h-10 text-sm border-slate-200"
+              />
+              {errors.location && (
+                <p className="text-xs text-red-500">{errors.location.message}</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="space-y-2">
+                <Label htmlFor="telephone" className="text-sm font-medium text-slate-700">
+                  Telephone
+                </Label>
+                <Input
+                  id="telephone"
+                  type="tel"
+                  {...register('telephone')}
+                  placeholder="+233 xx xxx xxxx"
+                  className="h-10 text-sm border-slate-200"
+                />
+                {errors.telephone && (
+                  <p className="text-xs text-red-500">{errors.telephone.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium text-slate-700">
+                  Email Address
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  {...register('email')}
+                  placeholder="contact@company.com"
+                  className="h-10 text-sm border-slate-200"
+                />
+                {errors.email && (
+                  <p className="text-xs text-red-500">{errors.email.message}</p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {!isAccraMode && (
+        <Card className="border-slate-100 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base font-semibold text-slate-900 tracking-tight">
+              Investment Outcome
+            </CardTitle>
+            <CardDescription className="text-sm text-slate-500">
+              Optional — record the investment value and jobs linked to this activity.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              <div className="space-y-2">
+                <Label htmlFor="investment_amount" className="text-sm font-medium text-slate-700">
+                  Investment Value
+                </Label>
+                <Input
+                  id="investment_amount"
+                  type="number"
+                  min="0"
+                  step="any"
+                  {...register('investment_amount')}
+                  placeholder="0.00"
+                  className="h-10 text-sm border-slate-200"
+                />
+                {errors.investment_amount && (
+                  <p className="text-xs text-red-500">{errors.investment_amount.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="investment_currency" className="text-sm font-medium text-slate-700">
+                  Currency
+                </Label>
+                <Select
+                  value={watch('investment_currency')}
+                  onValueChange={val => setValue('investment_currency', val)}
+                >
+                  <SelectTrigger className="h-10 text-sm border-slate-200">
+                    <SelectValue placeholder="Currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {['USD', 'GHS', 'EUR', 'GBP'].map(c => (
+                      <SelectItem key={c} value={c} className="text-sm">{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="jobs_created" className="text-sm font-medium text-slate-700">
+                  Jobs Created
+                </Label>
+                <Input
+                  id="jobs_created"
+                  type="number"
+                  min="0"
+                  step="1"
+                  {...register('jobs_created')}
+                  placeholder="0"
+                  className="h-10 text-sm border-slate-200"
+                />
+                {errors.jobs_created && (
+                  <p className="text-xs text-red-500">{errors.jobs_created.message}</p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {!isAccraMode && (
+        <Card className="border-slate-100 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base font-semibold text-slate-900 tracking-tight">
+              Notes & Follow-up
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="detail" className="text-sm font-medium text-slate-700">
+                Detail / Summary
+              </Label>
+              <Textarea
+                id="detail"
+                {...register('detail')}
+                placeholder="Describe the activity in detail..."
+                rows={4}
+                className="text-sm border-slate-200 resize-none"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="action_required" className="text-sm font-medium text-slate-700">
+                Action Required
+              </Label>
+              <Textarea
+                id="action_required"
+                {...register('action_required')}
+                placeholder="Any follow-up actions needed..."
+                rows={3}
+                className="text-sm border-slate-200 resize-none"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="outcome" className="text-sm font-medium text-slate-700">
+                Outcome
+              </Label>
+              <Textarea
+                id="outcome"
+                {...register('outcome')}
+                placeholder="Result / outcome of this activity (for the weekly report)..."
+                rows={3}
+                className="text-sm border-slate-200 resize-none"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="evidence" className="text-sm font-medium text-slate-700">
+                Evidence (Photos / Documents) <span className="font-normal text-slate-400">— optional</span>
+              </Label>
+              {existing.length > 0 && (
+                <ul className="space-y-1">
+                  {existing.map(a => (
+                    <li key={a.id} className="text-sm">
+                      {a.url ? (
+                        <a href={a.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                          {a.name}
+                        </a>
+                      ) : (
+                        <span className="text-slate-600">{a.name}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <Input
+                id="evidence"
+                type="file"
+                multiple
+                accept="image/*,application/pdf"
+                onChange={e => setFiles(Array.from(e.target.files ?? []))}
+                className="h-auto py-2 text-sm border-slate-200"
+              />
+              {files.length > 0 && (
+                <p className="text-xs text-slate-500">{files.length} file(s) ready to upload on save</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Status */}
       <Card className="border-slate-100 shadow-sm">

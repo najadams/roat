@@ -112,7 +112,9 @@ export function NotificationBell() {
             <ul className="divide-y divide-slate-50">
               {alerts.map(alert => {
                 const daysPending = getDaysPending(alert.created_at)
-                const typeLabel = ACTIVITY_TYPE_LABELS[alert.activity_type] ?? alert.activity_type.replace(/_/g, ' ')
+                const typeLabel = alert.zonal_office === 'accra'
+                  ? alert.detail ?? 'Accra activity'
+                  : ACTIVITY_TYPE_LABELS[alert.activity_type] ?? alert.activity_type.replace(/_/g, ' ')
                 const zoneLabel = ZONAL_OFFICE_LABELS[alert.zonal_office] ?? alert.zonal_office
 
                 return (

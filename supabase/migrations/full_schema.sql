@@ -7,7 +7,7 @@
 -- ────────────────────────────────────────────────────────────
 
 CREATE TYPE zonal_office AS ENUM (
-  'kumasi', 'tamale', 'takoradi', 'techiman', 'ho', 'koforidua'
+  'accra', 'kumasi', 'tamale', 'takoradi', 'techiman', 'ho', 'koforidua'
 );
 
 CREATE TYPE user_role AS ENUM (

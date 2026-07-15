@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { updateUserProfile, inviteUser } from '@/actions/user.actions'
+import { updateUserProfile, inviteUser, resetUserPassword } from '@/actions/user.actions'
 import { ZONAL_OFFICE_LABELS } from '@/types/activity.types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/select'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Badge } from '@/components/ui/badge'
-import { Edit2, Shield, ShieldOff, UserPlus } from 'lucide-react'
+import { Edit2, Shield, ShieldOff, UserPlus, KeyRound } from 'lucide-react'
 import { formatDate } from '@/lib/utils/date-helpers'
 import type { Database, UserRole } from '@/types/database.types'
 
@@ -38,6 +38,9 @@ export function UserTable({ users: initialUsers }: UserTableProps) {
     zonal_office: '',
     is_active: true,
   })
+
+  const [resetting, setResetting] = useState<Profile | null>(null)
+  const [resetLoading, setResetLoading] = useState(false)
 
   const [inviting, setInviting] = useState(false)
   const [inviteOpen, setInviteOpen] = useState(false)
@@ -80,6 +83,23 @@ export function UserTable({ users: initialUsers }: UserTableProps) {
       setInviteOpen(false)
     }
     setInviting(false)
+  }
+
+  async function handleReset() {
+    if (!resetting) return
+    setResetLoading(true)
+
+    const result = await resetUserPassword(resetting.id)
+
+    if (result.error) {
+      toast.error(getErrorMessage(result.error, 'Failed to reset password'))
+    } else {
+      toast.success(
+        `Password reset to "${result.defaultPassword}". ${resetting.full_name} can sign in with it and will be prompted to set a new one.`
+      )
+      setResetting(null)
+    }
+    setResetLoading(false)
   }
 
   function openEdit(user: Profile) {
@@ -178,20 +198,63 @@ export function UserTable({ users: initialUsers }: UserTableProps) {
                 </TableCell>
                 <TableCell className="text-slate-400 text-sm py-3.5">{formatDate(user.created_at)}</TableCell>
                 <TableCell className="py-3.5">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-slate-400 hover:text-slate-900"
-                    onClick={() => openEdit(user)}
-                  >
-                    <Edit2 className="h-3.5 w-3.5" />
-                  </Button>
+                  <div className="flex items-center justify-end gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-slate-400 hover:text-slate-900"
+                      title="Reset password"
+                      onClick={() => setResetting(user)}
+                    >
+                      <KeyRound className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-slate-400 hover:text-slate-900"
+                      title="Edit user"
+                      onClick={() => openEdit(user)}
+                    >
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={!!resetting} onOpenChange={() => !resetLoading && setResetting(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-slate-900">Reset Password</DialogTitle>
+            <DialogDescription>
+              This sets a temporary password the user can sign in with right away.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2 space-y-3 text-sm text-slate-600">
+            <p>
+              <span className="font-medium text-slate-900">{resetting?.full_name}</span>
+              {' '}({resetting?.email}) will have their password reset to the default
+              {' '}<code className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-900 font-mono text-xs">roat@1234</code>.
+            </p>
+            <p>They&apos;ll be prompted to choose a new password the next time they sign in.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setResetting(null)} disabled={resetLoading}>Cancel</Button>
+            <Button
+              onClick={handleReset}
+              disabled={resetLoading}
+              className="bg-slate-900 hover:bg-slate-800 text-white text-sm gap-2"
+            >
+              <KeyRound className="h-4 w-4" />
+              {resetLoading ? 'Resetting...' : 'Reset to Default'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Invite User Dialog */}
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>

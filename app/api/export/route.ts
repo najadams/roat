@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { exportToExcel, exportToPDF } from '@/lib/utils/export-helpers'
+import { createAdminClient, createClient } from '@/lib/supabase/server'
+import {
+  exportAccraReportToPDF,
+  exportToExcel,
+  exportToPDF,
+  type AccraActivityExportRow,
+} from '@/lib/utils/export-helpers'
 import { getReportRange } from '@/lib/utils/date-helpers'
 import type { Activity } from '@/types/activity.types'
 import type { ReportPeriod } from '@/lib/utils/date-helpers'
@@ -52,6 +57,8 @@ export async function GET(request: NextRequest) {
     query = query.eq('zonal_office', profile.zonal_office)
   } else if (zone && zone !== 'all' && profile?.role === 'regional_admin') {
     query = query.eq('zonal_office', zone as ZonalOffice)
+  } else {
+    query = query.neq('zonal_office', 'accra')
   }
 
   const { data: activities, error } = await query
@@ -63,8 +70,12 @@ export async function GET(request: NextRequest) {
   const data = (activities ?? []) as Activity[]
   const filename = `argus-${period}-report-${format(new Date(), 'yyyy-MM-dd')}`
 
+  const isAccraReport =
+    zone === 'accra' ||
+    (profile?.role === 'zonal_officer' && profile.zonal_office === 'accra')
+
   if (formatParam === 'excel') {
-    const buffer = exportToExcel(data, filename)
+    const buffer = exportToExcel(data)
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -74,6 +85,45 @@ export async function GET(request: NextRequest) {
   }
 
   // Default: PDF
+  if (isAccraReport) {
+    const creatorIds = Array.from(new Set(data.map(activity => activity.created_by)))
+    let profileMap = new Map<string, { full_name: string | null; email: string | null }>()
+
+    if (creatorIds.length > 0) {
+      const profileClient = process.env.SUPABASE_SERVICE_ROLE_KEY
+        ? createAdminClient()
+        : supabase
+      const { data: creators } = await profileClient
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', creatorIds)
+
+      profileMap = new Map(
+        (creators ?? []).map(creator => [
+          creator.id,
+          { full_name: creator.full_name, email: creator.email },
+        ])
+      )
+    }
+
+    const accraRows: AccraActivityExportRow[] = data.map(activity => {
+      const creator = profileMap.get(activity.created_by)
+      return {
+        ...activity,
+        created_by_name: creator?.full_name ?? null,
+        created_by_email: creator?.email ?? null,
+      }
+    })
+
+    const buffer = exportAccraReportToPDF(accraRows, period, fromStr, toStr)
+    return new NextResponse(new Uint8Array(buffer), {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="argus-accra-${period}-report-${format(new Date(), 'yyyy-MM-dd')}.pdf"`,
+      },
+    })
+  }
+
   const buffer = exportToPDF(data, period, zone)
   return new NextResponse(new Uint8Array(buffer), {
     headers: {

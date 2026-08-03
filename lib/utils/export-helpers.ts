@@ -2,7 +2,8 @@ import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import {
-  ACCRA_STORAGE_ACTIVITY_TYPE,
+  ACCRA_ACTIVITY_TYPE_LABELS,
+  ACCRA_OTHER_ACTIVITY_TYPE,
   ACTIVITY_TYPE_LABELS,
   ACTIVITY_STATUS_LABELS,
   REGIONAL_ACTIVITY_TYPE_LABELS,
@@ -61,7 +62,7 @@ export function exportToPDF(
   const doc = new jsPDF({ orientation: 'landscape' })
   const isAccraReport = zone === 'accra'
   const summaryLabels = isAccraReport
-    ? { [ACCRA_STORAGE_ACTIVITY_TYPE]: ACTIVITY_TYPE_LABELS[ACCRA_STORAGE_ACTIVITY_TYPE] }
+    ? ACCRA_ACTIVITY_TYPE_LABELS
     : REGIONAL_ACTIVITY_TYPE_LABELS
 
   // Header
@@ -326,13 +327,14 @@ export function exportAccraReportToPDF(
 
       autoTable(doc, {
         startY: cursorY + 11,
-        head: [['Date', 'Status', 'Activity Description', 'Recorded']],
+        head: [['Date', 'Status', 'Activity Type', 'Other Description', 'Recorded']],
         body: group.rows
           .sort((a, b) => b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at))
           .map(activity => [
             formatDateStr(activity.date),
             ACTIVITY_STATUS_LABELS[activity.status] ?? activity.status.replace(/_/g, ' '),
-            activity.detail ?? '',
+            ACTIVITY_TYPE_LABELS[activity.activity_type] ?? activity.activity_type.replace(/_/g, ' '),
+            activity.activity_type === ACCRA_OTHER_ACTIVITY_TYPE ? activity.detail ?? '' : '',
             new Date(activity.created_at).toLocaleDateString('en-GB', {
               day: '2-digit',
               month: 'short',
@@ -349,8 +351,9 @@ export function exportAccraReportToPDF(
         columnStyles: {
           0: { cellWidth: 24 },
           1: { cellWidth: 24 },
-          2: { cellWidth: 190 },
-          3: { cellWidth: 31 },
+          2: { cellWidth: 70 },
+          3: { cellWidth: 121 },
+          4: { cellWidth: 31 },
         },
       })
 

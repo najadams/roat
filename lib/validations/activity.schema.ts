@@ -1,5 +1,10 @@
 import { z } from 'zod'
 import type { ActivityType, ZonalOffice } from '@/types/database.types'
+import {
+  ACCRA_OTHER_ACTIVITY_TYPE,
+  REGIONAL_ACTIVITY_TYPES,
+  SELECTABLE_ACTIVITY_TYPES,
+} from '@/types/activity.types'
 
 export const zonalOffices: [ZonalOffice, ...ZonalOffice[]] = [
   'accra',
@@ -16,22 +21,10 @@ export const regionalZonalOffices = zonalOffices.filter(
 ) as Exclude<ZonalOffice, 'accra'>[]
 
 export const activityTypes: [ActivityType, ...ActivityType[]] = [
-  'investor_enquiry',
-  'new_registration',
-  'renewal',
-  'investor_issue_resolution',
-  'facilitation_done',
-  'site_visit',
-  'technology_transfer_agreement',
-  'stakeholder_engagement',
-  'official_correspondence',
-  'outreach_promotional',
-  'media_interview',
-  'checkup_call',
-  'iomp_update',
+  ...SELECTABLE_ACTIVITY_TYPES,
 ]
 
-export const regionalActivityTypes = activityTypes
+export const regionalActivityTypes = [...REGIONAL_ACTIVITY_TYPES]
 
 const PHONE_ERROR_MESSAGE = 'Enter valid phone number(s), e.g. 024 123 4567 or 0200710055/0508288446'
 
@@ -79,16 +72,42 @@ const activityBaseSchema = z.object({
     .default('pending'),
 })
 
-export const activitySchema = activityBaseSchema.extend({
-  // Zod v4: error params use 'error' instead of 'required_error'
-  activity_type: z.enum(activityTypes, 'Activity type is required'),
-})
+export const activitySchema = activityBaseSchema
+  .extend({
+    // Zod v4: error params use 'error' instead of 'required_error'
+    activity_type: z.enum(activityTypes, 'Activity type is required'),
+  })
+  .superRefine((data, context) => {
+    if (
+      data.activity_type === ACCRA_OTHER_ACTIVITY_TYPE &&
+      !data.custom_activity_description?.trim()
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['custom_activity_description'],
+        message: 'Enter a description for Other',
+      })
+    }
+  })
 
-export const createActivitySchema = activityBaseSchema.extend({
-  activity_types: z
-    .array(z.enum(activityTypes))
-    .min(1, 'Select at least one activity type'),
-})
+export const createActivitySchema = activityBaseSchema
+  .extend({
+    activity_types: z
+      .array(z.enum(activityTypes))
+      .min(1, 'Select at least one activity type'),
+  })
+  .superRefine((data, context) => {
+    if (
+      data.activity_types.includes(ACCRA_OTHER_ACTIVITY_TYPE) &&
+      !data.custom_activity_description?.trim()
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['custom_activity_description'],
+        message: 'Enter a description for Other',
+      })
+    }
+  })
 
 export type ActivityFormData = z.infer<typeof activitySchema>
 export type ActivityFormInput = z.input<typeof activitySchema>

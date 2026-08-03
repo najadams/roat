@@ -6,6 +6,7 @@ import { ZonalSummaryChart } from '@/components/dashboard/ZonalSummaryChart'
 import { ActivityBreakdownChart } from '@/components/dashboard/ActivityBreakdownChart'
 import { WebinarProgressChart } from '@/components/dashboard/WebinarProgressChart'
 import {
+  ACCRA_ACTIVITY_TYPE_LABELS,
   ACTIVITY_TYPE_LABELS,
   REGIONAL_ACTIVITY_TYPE_LABELS,
   REGIONAL_OFFICE_LABELS,
@@ -98,7 +99,7 @@ export default async function DashboardPage() {
 
   // Stacked bar: ALL activity types as keys per zone
   const activityTypeEntries = Object.entries(
-    profile?.zonal_office === 'accra' ? ACTIVITY_TYPE_LABELS : REGIONAL_ACTIVITY_TYPE_LABELS
+    profile?.zonal_office === 'accra' ? ACCRA_ACTIVITY_TYPE_LABELS : REGIONAL_ACTIVITY_TYPE_LABELS
   )
   const zoneChartData = Object.entries(REGIONAL_OFFICE_LABELS).map(([key, label]) => {
     const row: ZonalData = { zone: label }

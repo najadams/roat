@@ -16,7 +16,11 @@ import {
   dismissAllActivityAlerts,
   type PendingAlert,
 } from '@/actions/notification.actions'
-import { ACTIVITY_TYPE_LABELS, ZONAL_OFFICE_LABELS } from '@/types/activity.types'
+import {
+  ACTIVITY_TYPE_LABELS,
+  ZONAL_OFFICE_LABELS,
+  getActivityTypeDisplay,
+} from '@/types/activity.types'
 
 function getDaysPending(createdAt: string): number {
   return Math.floor((Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24))
@@ -113,7 +117,7 @@ export function NotificationBell() {
               {alerts.map(alert => {
                 const daysPending = getDaysPending(alert.created_at)
                 const typeLabel = alert.zonal_office === 'accra'
-                  ? alert.detail ?? 'Accra activity'
+                  ? getActivityTypeDisplay(alert.activity_type, alert.detail)
                   : ACTIVITY_TYPE_LABELS[alert.activity_type] ?? alert.activity_type.replace(/_/g, ' ')
                 const zoneLabel = ZONAL_OFFICE_LABELS[alert.zonal_office] ?? alert.zonal_office
 

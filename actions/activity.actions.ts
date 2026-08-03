@@ -2,7 +2,11 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { activitySchema, createActivitySchema } from '@/lib/validations/activity.schema'
-import { ACCRA_STORAGE_ACTIVITY_TYPE } from '@/types/activity.types'
+import {
+  ACCRA_OTHER_ACTIVITY_TYPE,
+  isAccraActivityType,
+  isRegionalActivityType,
+} from '@/types/activity.types'
 import { revalidatePath } from 'next/cache'
 
 const ACCRA_DEFAULT_COMPANY = 'Accra Operations'
@@ -82,12 +86,23 @@ export async function createActivity(formData: unknown) {
 
   const isAccraActivity = zone === 'accra'
   const trimmedCustomDescription = customActivityDescription?.trim() ?? ''
+  const uniqueActivityTypes = Array.from(new Set(activityTypes))
 
   if (isAccraActivity) {
-    if (!trimmedCustomDescription) {
+    if (uniqueActivityTypes.length !== 1 || !isAccraActivityType(uniqueActivityTypes[0])) {
       return {
         error: {
-          custom_activity_description: ['Activity description is required for Accra activities'],
+          activity_type: ['Select one of the available Accra activity types'],
+        },
+      }
+    }
+
+    const activityType = uniqueActivityTypes[0]
+
+    if (activityType === ACCRA_OTHER_ACTIVITY_TYPE && !trimmedCustomDescription) {
+      return {
+        error: {
+          custom_activity_description: ['Enter a description for Other'],
         },
       }
     }
@@ -96,12 +111,12 @@ export async function createActivity(formData: unknown) {
       .from('activities')
       .insert({
         ...rest,
-        activity_type: ACCRA_STORAGE_ACTIVITY_TYPE,
+        activity_type: activityType,
         zonal_office: zone,
         investment_amount: null,
         investment_currency: null,
         jobs_created: null,
-        detail: trimmedCustomDescription,
+        detail: activityType === ACCRA_OTHER_ACTIVITY_TYPE ? trimmedCustomDescription : null,
         action_required: null,
         outcome: null,
         created_by: user.id,
@@ -118,9 +133,11 @@ export async function createActivity(formData: unknown) {
     return { success: true, ids, id: ids[0] }
   }
 
-  const uniqueActivityTypes = Array.from(new Set(activityTypes))
   if (uniqueActivityTypes.length === 0) {
     return { error: { activity_type: ['Select at least one activity type'] } }
+  }
+  if (uniqueActivityTypes.some(activityType => !isRegionalActivityType(activityType))) {
+    return { error: { activity_type: ['Select only activity types available for regional offices'] } }
   }
 
   const { data: inserted, error } = await supabase
@@ -188,26 +205,32 @@ export async function updateActivity(id: string, formData: unknown) {
   const nextZone = isAdmin && formZone ? formZone : current.zonal_office
   const isAccraActivity = nextZone === 'accra'
   const trimmedCustomDescription = customActivityDescription?.trim() ?? ''
+  const nextActivityType = isAdmin ? rest.activity_type : current.activity_type
 
-  if (isAccraActivity && !trimmedCustomDescription) {
-    return {
-      error: {
-        custom_activity_description: ['Activity description is required for Accra activities'],
-      },
+  if (isAccraActivity) {
+    if (!isAccraActivityType(nextActivityType)) {
+      return { error: { activity_type: ['Select one of the available Accra activity types'] } }
     }
+    if (nextActivityType === ACCRA_OTHER_ACTIVITY_TYPE && !trimmedCustomDescription) {
+      return { error: { custom_activity_description: ['Enter a description for Other'] } }
+    }
+  } else if (!isRegionalActivityType(nextActivityType)) {
+    return { error: { activity_type: ['Select an activity type available for regional offices'] } }
   }
 
   const updatePayload = isAdmin
     ? {
         ...rest,
-        activity_type: isAccraActivity ? ACCRA_STORAGE_ACTIVITY_TYPE : rest.activity_type,
+        activity_type: nextActivityType,
         ...(formZone ? { zonal_office: formZone } : {}),
         ...(isAccraActivity
           ? {
               investment_amount: null,
               investment_currency: null,
               jobs_created: null,
-              detail: trimmedCustomDescription,
+              detail: nextActivityType === ACCRA_OTHER_ACTIVITY_TYPE
+                ? trimmedCustomDescription
+                : null,
               action_required: null,
               outcome: null,
             }
@@ -223,7 +246,9 @@ export async function updateActivity(id: string, formData: unknown) {
               investment_amount: null,
               investment_currency: null,
               jobs_created: null,
-              detail: trimmedCustomDescription,
+              detail: nextActivityType === ACCRA_OTHER_ACTIVITY_TYPE
+                ? trimmedCustomDescription
+                : null,
               action_required: null,
               outcome: null,
             }
@@ -240,6 +265,7 @@ export async function updateActivity(id: string, formData: unknown) {
 
   revalidatePath('/module-a/activities')
   revalidatePath('/module-a/accra-reports')
+  revalidatePath('/dashboard')
   revalidatePath(`/module-a/activities/${id}`)
   return { success: true }
 }

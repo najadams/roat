@@ -28,6 +28,8 @@ export type ActivityType =
   | 'new_registration'
   | 'renewal'
   | 'facilitation_done'
+  // Kept in the generated database union for legacy enum compatibility only.
+  // New writes use outreach_promotional after migration 022.
   | 'site_visit'
   | 'technology_transfer_agreement'
   | 'stakeholder_engagement'
@@ -38,6 +40,14 @@ export type ActivityType =
   | 'investor_issue_resolution'
   | 'official_correspondence'
   | 'outreach_promotional'
+  | 'accra_webinars_with_mission'
+  | 'accra_webinars_for_business_groups_chamber'
+  | 'accra_capacity_building_for_missions'
+  | 'accra_engagements_events'
+  | 'accra_mission_support'
+  | 'accra_capacity_building_for_regional_offices'
+  | 'accra_orientation_for_regional_offices'
+  | 'accra_other'
 export type ActivityStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled'
 export type WebinarTaskName =
   | 'notice_to_ministry_of_finance'

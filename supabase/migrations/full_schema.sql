@@ -18,7 +18,6 @@ CREATE TYPE activity_type AS ENUM (
   'new_registration',
   'renewal',
   'facilitation_done',
-  'site_visit',
   'technology_transfer_agreement',
   'stakeholder_engagement',
   'media_interview',
@@ -27,7 +26,15 @@ CREATE TYPE activity_type AS ENUM (
   'investor_enquiry',
   'investor_issue_resolution',
   'official_correspondence',
-  'outreach_promotional'
+  'outreach_promotional',
+  'accra_webinars_with_mission',
+  'accra_webinars_for_business_groups_chamber',
+  'accra_capacity_building_for_missions',
+  'accra_engagements_events',
+  'accra_mission_support',
+  'accra_capacity_building_for_regional_offices',
+  'accra_orientation_for_regional_offices',
+  'accra_other'
 );
 
 CREATE TYPE activity_status AS ENUM (

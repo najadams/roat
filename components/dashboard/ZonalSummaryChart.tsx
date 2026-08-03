@@ -11,7 +11,6 @@ const TYPE_COLORS: Record<string, string> = {
   renewal:                       '#f59e0b',
   investor_issue_resolution:     '#ef4444',
   facilitation_done:             '#8b5cf6',
-  site_visit:                    '#06b6d4',
   technology_transfer_agreement: '#ec4899',
   stakeholder_engagement:        '#f97316',
   official_correspondence:       '#14b8a6',

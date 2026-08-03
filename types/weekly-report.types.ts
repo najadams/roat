@@ -16,7 +16,7 @@ export const WEEKLY_REPORT_CATEGORIES: WeeklyReportCategory[] = [
   { key: 'new_registrations',   label: 'New Investor Registrations',          types: ['new_registration'] },
   { key: 'facilitation',        label: 'Facilitation (renewal)',              types: ['renewal'] },
   { key: 'stakeholder',         label: 'Stakeholder Engagements',             types: ['stakeholder_engagement'] },
-  { key: 'monitoring_tta',      label: 'Monitoring & TTAs',                   types: ['site_visit', 'technology_transfer_agreement'] },
+  { key: 'monitoring_tta',      label: 'Monitoring, Outreach & TTAs',         types: ['outreach_promotional', 'technology_transfer_agreement'] },
   { key: 'iomp',                label: 'IOMP Data Updates',                   types: ['iomp_update'] },
   { key: 'investor_issues',     label: 'Investor Issues Facilitated',         types: ['investor_issue_resolution'] },
   { key: 'checkup_calls',       label: 'Check-up Calls',                      types: ['checkup_call'] },
@@ -35,8 +35,8 @@ export interface ThematicArea {
 
 export const THEMATIC_AREAS: ThematicArea[] = [
   { key: 'facilitation_registration', label: 'Investor Facilitation & Registration', types: ['new_registration', 'renewal', 'investor_enquiry'] },
-  { key: 'aftercare_monitoring',      label: 'Investor Issue Facilitation & Monitoring', types: ['investor_issue_resolution', 'site_visit'] },
-  { key: 'investment_promotion',      label: 'Investment Promotion & Local Investment Drive', types: ['outreach_promotional'] },
+  { key: 'aftercare_monitoring',      label: 'Investor Issue Facilitation & Monitoring', types: ['investor_issue_resolution', 'outreach_promotional'] },
+  { key: 'investment_promotion',      label: 'Investment Promotion & Local Investment Drive', types: [] },
   { key: 'stakeholder_engagement',    label: 'Regional Stakeholder Engagement',      types: ['stakeholder_engagement'] },
   { key: 'iomp_support',              label: 'IOMP Support & Updates',               types: ['iomp_update'] },
   { key: 'quota_tta',                 label: 'Quota / TTA & Check-up',               types: ['technology_transfer_agreement', 'checkup_call'] },

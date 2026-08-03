@@ -23,7 +23,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { ACTIVITY_TYPE_LABELS, ZONAL_OFFICE_LABELS, type Activity } from '@/types/activity.types'
+import {
+  ACTIVITY_TYPE_LABELS,
+  ZONAL_OFFICE_LABELS,
+  getActivityTypeDisplay,
+  type Activity,
+} from '@/types/activity.types'
 import { formatDate } from '@/lib/utils/date-helpers'
 
 interface ActivityTableProps {
@@ -82,7 +87,7 @@ export function ActivityTable({ activities, showZone = false, canDelete = false 
                 </TableCell>
                 <TableCell className="text-sm font-medium text-slate-900 py-3.5">
                   {activity.zonal_office === 'accra'
-                    ? activity.detail ?? 'Accra activity'
+                    ? getActivityTypeDisplay(activity.activity_type, activity.detail)
                     : ACTIVITY_TYPE_LABELS[activity.activity_type] ?? activity.activity_type}
                 </TableCell>
                 {showZone && (

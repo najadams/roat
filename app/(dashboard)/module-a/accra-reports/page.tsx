@@ -7,11 +7,16 @@ import { ActivityBreakdownChart } from '@/components/dashboard/ActivityBreakdown
 import { ReportsPeriodSelector } from '../reports/reports-period-selector'
 import { getReportRange } from '@/lib/utils/date-helpers'
 import { formatDate } from '@/lib/utils/date-helpers'
+import {
+  ACCRA_OTHER_ACTIVITY_TYPE,
+  getActivityTypeDisplay,
+} from '@/types/activity.types'
 
 export const metadata = { title: 'Accra Reports — ROAT' }
 
 type AccraActivity = {
   id: string
+  activity_type: string
   date: string
   company_name: string
   location: string
@@ -78,7 +83,7 @@ export default async function AccraReportsPage({ searchParams }: PageProps) {
 
   const { data } = await supabase
     .from('activities')
-    .select('id, date, company_name, location, status, sector, detail, outcome')
+    .select('id, activity_type, date, company_name, location, status, sector, detail, outcome')
     .eq('zonal_office', 'accra')
     .is('deleted_at', null)
     .neq('status', 'cancelled')
@@ -92,9 +97,9 @@ export default async function AccraReportsPage({ searchParams }: PageProps) {
   const pending = activities.filter(a => a.status === 'pending').length
   const inProgress = activities.filter(a => a.status === 'in_progress').length
 
-  const statusData = Object.entries(
+  const activityTypeData = Object.entries(
     activities.reduce((acc, activity) => {
-      const label = activity.status.replace(/_/g, ' ')
+      const label = getActivityTypeDisplay(activity.activity_type)
       acc[label] = (acc[label] ?? 0) + 1
       return acc
     }, {} as Record<string, number>)
@@ -157,11 +162,11 @@ export default async function AccraReportsPage({ searchParams }: PageProps) {
         <Card className="border-slate-100 shadow-sm">
           <CardHeader className="pb-0">
             <CardTitle className="text-sm font-semibold text-slate-900 tracking-tight">
-              Status Breakdown
+              Activity Type Breakdown
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
-            <ActivityBreakdownChart data={statusData} />
+            <ActivityBreakdownChart data={activityTypeData} />
           </CardContent>
         </Card>
 
@@ -191,7 +196,7 @@ export default async function AccraReportsPage({ searchParams }: PageProps) {
       <Card className="border-slate-100 shadow-sm">
         <CardHeader>
           <CardTitle className="text-sm font-semibold text-slate-900 tracking-tight">
-            Activity Descriptions
+            Activity Register
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -199,7 +204,7 @@ export default async function AccraReportsPage({ searchParams }: PageProps) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100">
-                  {['Date', 'Activity Description', 'Status'].map(header => (
+                  {['Date', 'Activity Type', 'Other Description', 'Status'].map(header => (
                     <th key={header} className="text-left py-2.5 pr-4 text-xs font-semibold tracking-wide text-slate-400 uppercase">
                       {header}
                     </th>
@@ -211,14 +216,19 @@ export default async function AccraReportsPage({ searchParams }: PageProps) {
                   <tr key={activity.id} className="border-b border-slate-50 align-top">
                     <td className="py-3 pr-4 text-slate-500 whitespace-nowrap">{formatDate(activity.date)}</td>
                     <td className="py-3 pr-4 text-slate-800 font-medium min-w-[280px]">
-                      {activity.detail ?? '—'}
+                      {getActivityTypeDisplay(activity.activity_type)}
+                    </td>
+                    <td className="min-w-[240px] py-3 pr-4 text-slate-600">
+                      {activity.activity_type === ACCRA_OTHER_ACTIVITY_TYPE
+                        ? activity.detail ?? '—'
+                        : '—'}
                     </td>
                     <td className="py-3 pr-4"><StatusBadge status={activity.status} /></td>
                   </tr>
                 ))}
                 {activities.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="py-12 text-center text-sm text-slate-400">
+                    <td colSpan={4} className="py-12 text-center text-sm text-slate-400">
                       No Accra activities found for this period.
                     </td>
                   </tr>

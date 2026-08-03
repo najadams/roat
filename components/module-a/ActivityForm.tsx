@@ -9,9 +9,12 @@ import { activitySchema, type ActivityFormData, type ActivityFormInput } from '@
 import { createActivity, updateActivity, addActivityAttachments, getActivityAttachments } from '@/actions/activity.actions'
 import { createClient } from '@/lib/supabase/client'
 import {
-  ACCRA_STORAGE_ACTIVITY_TYPE,
+  ACCRA_ACTIVITY_TYPE_LABELS,
+  ACCRA_OTHER_ACTIVITY_TYPE,
   ACTIVITY_TYPE_LABELS,
   REGIONAL_ACTIVITY_TYPE_LABELS,
+  getActivityTypeDisplay,
+  isAccraActivityType,
 } from '@/types/activity.types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -59,8 +62,11 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
   const router = useRouter()
   const isEditing = !!activity
   const fieldsLocked = isEditing && !isAdmin
+  const initialActivityType = activity?.zonal_office === 'accra' && !isAccraActivityType(activity.activity_type)
+    ? ACCRA_OTHER_ACTIVITY_TYPE
+    : activity?.activity_type as ActivityTypeValue | undefined
   const [selectedActivityTypes, setSelectedActivityTypes] = useState<ActivityTypeValue[]>(
-    activity ? [activity.activity_type as ActivityTypeValue] : []
+    initialActivityType ? [initialActivityType] : []
   )
 
   const {
@@ -74,7 +80,7 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
     resolver: zodResolver(activitySchema),
     defaultValues: activity
       ? {
-          activity_type: activity.activity_type as ActivityFormData['activity_type'],
+          activity_type: initialActivityType,
           zonal_office: activity.zonal_office as ActivityFormData['zonal_office'],
           date: activity.date,
           company_name: activity.company_name,
@@ -102,13 +108,11 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
   const selectedType = watch('activity_type')
   const selectedStatus = watch('status')
   const selectedZone = watch('zonal_office')
-  const wasAccraMode = useRef(false)
-  const effectiveZone = isEditing
-    ? activity.zonal_office
-    : isAdmin
-      ? selectedZone
-      : userZone
+  const effectiveZone = isAdmin
+    ? selectedZone ?? activity?.zonal_office
+    : activity?.zonal_office ?? userZone
   const isAccraMode = effectiveZone === 'accra'
+  const previousZone = useRef(effectiveZone)
 
   // Evidence files
   const [files, setFiles] = useState<File[]>([])
@@ -119,12 +123,16 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
   }, [activity?.id])
 
   useEffect(() => {
+    const zoneChanged = previousZone.current !== effectiveZone
+
+    if (zoneChanged) {
+      setSelectedActivityTypes([])
+      setValue('activity_type', undefined as unknown as ActivityTypeValue, { shouldValidate: true })
+      setValue('custom_activity_description', '', { shouldValidate: false })
+    }
+    previousZone.current = effectiveZone
+
     if (isAccraMode) {
-      const accraType = ACCRA_STORAGE_ACTIVITY_TYPE as ActivityTypeValue
-      if (selectedActivityTypes.length !== 1 || selectedActivityTypes[0] !== accraType) {
-        setSelectedActivityTypes([accraType])
-      }
-      setValue('activity_type', ACCRA_STORAGE_ACTIVITY_TYPE as ActivityTypeValue, { shouldValidate: true })
       setValue('investment_amount', undefined, { shouldValidate: true })
       setValue('investment_currency', '', { shouldValidate: true })
       setValue('jobs_created', undefined, { shouldValidate: true })
@@ -137,20 +145,14 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
       setValue('detail', activity?.detail ?? '', { shouldValidate: true })
       setValue('action_required', activity?.action_required ?? '', { shouldValidate: true })
       setValue('outcome', activity?.outcome ?? '', { shouldValidate: true })
-      wasAccraMode.current = true
       return
     }
 
-    if (wasAccraMode.current) {
-      setSelectedActivityTypes([])
-      setValue('activity_type', undefined as unknown as ActivityTypeValue, { shouldValidate: true })
-      wasAccraMode.current = false
-    }
     if (!isEditing) {
       if (getValues('company_name') === ACCRA_DEFAULT_COMPANY) setValue('company_name', '', { shouldValidate: true })
       if (getValues('location') === ACCRA_DEFAULT_LOCATION) setValue('location', '', { shouldValidate: true })
     }
-  }, [activity, getValues, isAccraMode, isEditing, selectedActivityTypes, setValue])
+  }, [activity, effectiveZone, getValues, isAccraMode, isEditing, setValue])
 
   function toggleActivityType(value: ActivityTypeValue) {
     const next = selectedActivityTypes.includes(value)
@@ -191,8 +193,8 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
     const payload = isAccraMode
       ? {
           ...data,
-          activity_type: ACCRA_STORAGE_ACTIVITY_TYPE as ActivityFormData['activity_type'],
-          activity_types: [ACCRA_STORAGE_ACTIVITY_TYPE],
+          activity_type: data.activity_type,
+          activity_types: [data.activity_type],
           date: data.date || todayString(),
           company_name: data.company_name || ACCRA_DEFAULT_COMPANY,
           location: data.location || ACCRA_DEFAULT_LOCATION,
@@ -237,11 +239,11 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
       <Card className="border-slate-100 shadow-sm">
         <CardHeader className="pb-4">
           <CardTitle className="text-base font-semibold text-slate-900 tracking-tight">
-            {isAccraMode ? 'Activity Description' : 'Activity Type'}
+            Activity Type
           </CardTitle>
           <CardDescription className="text-sm text-slate-500">
             {isAccraMode
-              ? 'Describe the Accra activity in clear operational terms.'
+              ? 'Select the category that best describes this Accra activity. Choose Other to enter a custom description.'
               : isEditing
                 ? 'Select the category that best describes this activity.'
                 : 'Select every activity completed for this company.'}
@@ -250,21 +252,65 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
         <CardContent>
           {isAccraMode ? (
             fieldsLocked ? (
-              <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-                <p className="text-sm leading-6 text-slate-700">
-                  {activity!.detail}
+              <div className="w-fit rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                <p className="text-sm font-medium leading-6 text-slate-800">
+                  {getActivityTypeDisplay(initialActivityType ?? activity!.activity_type, activity!.detail)}
                 </p>
                 <p className="mt-2 text-xs text-slate-400">(locked)</p>
               </div>
             ) : (
-              <div className="space-y-2">
-                <Textarea
-                  id="custom_activity_description"
-                  rows={5}
-                  placeholder="Describe the activity, engagement, issue handled, or support provided by the Accra team."
-                  {...register('custom_activity_description')}
-                  className="text-sm border-slate-200 leading-6"
-                />
+              <div className="space-y-5">
+                <RadioGroup
+                  value={selectedType}
+                  onValueChange={value =>
+                    setValue('activity_type', value as ActivityFormData['activity_type'], {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+                >
+                  {Object.entries(ACCRA_ACTIVITY_TYPE_LABELS).map(([value, label]) => (
+                    <label
+                      key={value}
+                      htmlFor={`accra-${value}`}
+                      className={`flex min-h-20 cursor-pointer items-center gap-3 rounded-lg border p-4 transition-colors ${
+                        selectedType === value
+                          ? 'border-slate-950 bg-slate-50 shadow-sm'
+                          : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/60'
+                      }`}
+                    >
+                      <RadioGroupItem
+                        value={value}
+                        id={`accra-${value}`}
+                        className="flex-shrink-0"
+                      />
+                      <span className="text-sm font-semibold leading-5 tracking-tight text-slate-800">
+                        {label}
+                      </span>
+                    </label>
+                  ))}
+                </RadioGroup>
+                {errors.activity_type && (
+                  <p className="text-xs text-red-500">{errors.activity_type.message}</p>
+                )}
+                {selectedType === ACCRA_OTHER_ACTIVITY_TYPE && (
+                  <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50/70 p-4">
+                    <Label
+                      htmlFor="custom_activity_description"
+                      className="text-sm font-medium text-slate-700"
+                    >
+                      Other activity description <span className="text-red-500">*</span>
+                    </Label>
+                    <Textarea
+                      id="custom_activity_description"
+                      rows={4}
+                      placeholder="Enter the activity type or a clear operational description."
+                      {...register('custom_activity_description')}
+                      className="resize-none border-slate-200 bg-white text-sm leading-6"
+                    />
+                  </div>
+                )}
                 {errors.custom_activity_description && (
                   <p className="text-xs text-red-500">{errors.custom_activity_description.message}</p>
                 )}

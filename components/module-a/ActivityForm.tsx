@@ -243,7 +243,7 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
           </CardTitle>
           <CardDescription className="text-sm text-slate-500">
             {isAccraMode
-              ? 'Select the category that best describes this Accra activity. Choose Other to enter a custom description.'
+              ? 'Select the category that best describes this Accra activity, then add any useful operational details.'
               : isEditing
                 ? 'Select the category that best describes this activity.'
                 : 'Select every activity completed for this company.'}
@@ -251,15 +251,15 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
         </CardHeader>
         <CardContent>
           {isAccraMode ? (
-            fieldsLocked ? (
-              <div className="w-fit rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-                <p className="text-sm font-medium leading-6 text-slate-800">
-                  {getActivityTypeDisplay(initialActivityType ?? activity!.activity_type, activity!.detail)}
-                </p>
-                <p className="mt-2 text-xs text-slate-400">(locked)</p>
-              </div>
-            ) : (
-              <div className="space-y-5">
+            <div className="space-y-5">
+              {fieldsLocked ? (
+                <div className="w-fit rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                  <p className="text-sm font-medium leading-6 text-slate-800">
+                    {getActivityTypeDisplay(initialActivityType ?? activity!.activity_type)}
+                  </p>
+                  <p className="mt-2 text-xs text-slate-400">(locked)</p>
+                </div>
+              ) : (
                 <RadioGroup
                   value={selectedType}
                   onValueChange={value =>
@@ -291,31 +291,40 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
                     </label>
                   ))}
                 </RadioGroup>
-                {errors.activity_type && (
-                  <p className="text-xs text-red-500">{errors.activity_type.message}</p>
-                )}
-                {selectedType === ACCRA_OTHER_ACTIVITY_TYPE && (
-                  <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50/70 p-4">
+              )}
+              {errors.activity_type && (
+                <p className="text-xs text-red-500">{errors.activity_type.message}</p>
+              )}
+              {(selectedType || fieldsLocked) && (
+                <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50/70 p-4">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <Label
                       htmlFor="custom_activity_description"
                       className="text-sm font-medium text-slate-700"
                     >
-                      Other activity description <span className="text-red-500">*</span>
+                      Activity details
                     </Label>
-                    <Textarea
-                      id="custom_activity_description"
-                      rows={4}
-                      placeholder="Enter the activity type or a clear operational description."
-                      {...register('custom_activity_description')}
-                      className="resize-none border-slate-200 bg-white text-sm leading-6"
-                    />
+                    {selectedType === ACCRA_OTHER_ACTIVITY_TYPE ? (
+                      <span className="text-xs font-medium text-red-500">Required for Other</span>
+                    ) : (
+                      <span className="text-xs text-slate-400">Optional</span>
+                    )}
                   </div>
-                )}
-                {errors.custom_activity_description && (
-                  <p className="text-xs text-red-500">{errors.custom_activity_description.message}</p>
-                )}
-              </div>
-            )
+                  <Textarea
+                    id="custom_activity_description"
+                    rows={4}
+                    placeholder={selectedType === ACCRA_OTHER_ACTIVITY_TYPE
+                      ? 'Enter the activity type and supporting details.'
+                      : 'Add useful context, participants, outcomes, or follow-up notes.'}
+                    {...register('custom_activity_description')}
+                    className="resize-none border-slate-200 bg-white text-sm leading-6"
+                  />
+                </div>
+              )}
+              {errors.custom_activity_description && (
+                <p className="text-xs text-red-500">{errors.custom_activity_description.message}</p>
+              )}
+            </div>
           ) : fieldsLocked ? (
             <div className="flex items-center gap-2 px-3.5 py-3 rounded-lg border border-slate-200 bg-slate-50 w-fit">
               <span className="text-sm font-medium text-slate-800">

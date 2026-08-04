@@ -116,7 +116,7 @@ export async function createActivity(formData: unknown) {
         investment_amount: null,
         investment_currency: null,
         jobs_created: null,
-        detail: activityType === ACCRA_OTHER_ACTIVITY_TYPE ? trimmedCustomDescription : null,
+        detail: trimmedCustomDescription || null,
         action_required: null,
         outcome: null,
         created_by: user.id,
@@ -228,9 +228,7 @@ export async function updateActivity(id: string, formData: unknown) {
               investment_amount: null,
               investment_currency: null,
               jobs_created: null,
-              detail: nextActivityType === ACCRA_OTHER_ACTIVITY_TYPE
-                ? trimmedCustomDescription
-                : null,
+              detail: trimmedCustomDescription || null,
               action_required: null,
               outcome: null,
             }
@@ -246,9 +244,7 @@ export async function updateActivity(id: string, formData: unknown) {
               investment_amount: null,
               investment_currency: null,
               jobs_created: null,
-              detail: nextActivityType === ACCRA_OTHER_ACTIVITY_TYPE
-                ? trimmedCustomDescription
-                : null,
+              detail: trimmedCustomDescription || null,
               action_required: null,
               outcome: null,
             }

@@ -3,7 +3,6 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import {
   ACCRA_ACTIVITY_TYPE_LABELS,
-  ACCRA_OTHER_ACTIVITY_TYPE,
   ACTIVITY_TYPE_LABELS,
   ACTIVITY_STATUS_LABELS,
   REGIONAL_ACTIVITY_TYPE_LABELS,
@@ -327,14 +326,14 @@ export function exportAccraReportToPDF(
 
       autoTable(doc, {
         startY: cursorY + 11,
-        head: [['Date', 'Status', 'Activity Type', 'Other Description', 'Recorded']],
+        head: [['Date', 'Status', 'Activity Type', 'Activity Details', 'Recorded']],
         body: group.rows
           .sort((a, b) => b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at))
           .map(activity => [
             formatDateStr(activity.date),
             ACTIVITY_STATUS_LABELS[activity.status] ?? activity.status.replace(/_/g, ' '),
             ACTIVITY_TYPE_LABELS[activity.activity_type] ?? activity.activity_type.replace(/_/g, ' '),
-            activity.activity_type === ACCRA_OTHER_ACTIVITY_TYPE ? activity.detail ?? '' : '',
+            activity.detail ?? '',
             new Date(activity.created_at).toLocaleDateString('en-GB', {
               day: '2-digit',
               month: 'short',

@@ -7,10 +7,7 @@ import { ActivityBreakdownChart } from '@/components/dashboard/ActivityBreakdown
 import { ReportsPeriodSelector } from '../reports/reports-period-selector'
 import { getReportRange } from '@/lib/utils/date-helpers'
 import { formatDate } from '@/lib/utils/date-helpers'
-import {
-  ACCRA_OTHER_ACTIVITY_TYPE,
-  getActivityTypeDisplay,
-} from '@/types/activity.types'
+import { getActivityTypeDisplay } from '@/types/activity.types'
 
 export const metadata = { title: 'Accra Reports — ROAT' }
 
@@ -204,7 +201,7 @@ export default async function AccraReportsPage({ searchParams }: PageProps) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100">
-                  {['Date', 'Activity Type', 'Other Description', 'Status'].map(header => (
+                  {['Date', 'Activity Type', 'Activity Details', 'Status'].map(header => (
                     <th key={header} className="text-left py-2.5 pr-4 text-xs font-semibold tracking-wide text-slate-400 uppercase">
                       {header}
                     </th>
@@ -219,9 +216,7 @@ export default async function AccraReportsPage({ searchParams }: PageProps) {
                       {getActivityTypeDisplay(activity.activity_type)}
                     </td>
                     <td className="min-w-[240px] py-3 pr-4 text-slate-600">
-                      {activity.activity_type === ACCRA_OTHER_ACTIVITY_TYPE
-                        ? activity.detail ?? '—'
-                        : '—'}
+                      {activity.detail ?? '—'}
                     </td>
                     <td className="py-3 pr-4"><StatusBadge status={activity.status} /></td>
                   </tr>

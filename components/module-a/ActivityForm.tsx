@@ -12,6 +12,7 @@ import {
   ACCRA_ACTIVITY_TYPE_LABELS,
   ACCRA_OTHER_ACTIVITY_TYPE,
   ACTIVITY_TYPE_LABELS,
+  CHECK_UP_CALL_OUTCOME_LABELS,
   REGIONAL_ACTIVITY_TYPE_LABELS,
   getActivityTypeDisplay,
   isAccraActivityType,
@@ -74,6 +75,7 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
     handleSubmit,
     setValue,
     getValues,
+    setError,
     watch,
     formState: { errors, isSubmitting },
   } = useForm<ActivityFormInput, unknown, ActivityFormData>({
@@ -86,6 +88,7 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
           company_name: activity.company_name,
           location: activity.location,
           telephone: activity.telephone ?? '',
+          call_outcome: activity.call_outcome ?? undefined,
           email: activity.email ?? '',
           sector: activity.sector ?? '',
           detail: activity.detail ?? '',
@@ -107,11 +110,15 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
 
   const selectedType = watch('activity_type')
   const selectedStatus = watch('status')
+  const selectedCallOutcome = watch('call_outcome')
   const selectedZone = watch('zonal_office')
   const effectiveZone = isAdmin
     ? selectedZone ?? activity?.zonal_office
     : activity?.zonal_office ?? userZone
   const isAccraMode = effectiveZone === 'accra'
+  const isCheckUpCallSelected = isAccraMode || isEditing
+    ? selectedType === 'checkup_call'
+    : selectedActivityTypes.includes('checkup_call')
   const previousZone = useRef(effectiveZone)
 
   // Evidence files
@@ -190,6 +197,14 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
   }
 
   async function onSubmit(data: ActivityFormData) {
+    if (isCheckUpCallSelected && !data.call_outcome) {
+      setError('call_outcome', {
+        type: 'manual',
+        message: 'Select the result of the check-up call',
+      })
+      return
+    }
+
     const payload = isAccraMode
       ? {
           ...data,
@@ -432,6 +447,112 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
         </Card>
       )}
 
+      {isAccraMode && (
+        <Card className="border-slate-100 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base font-semibold tracking-tight text-slate-900">
+              Activity Details
+            </CardTitle>
+            <CardDescription className="text-sm text-slate-500">
+              Confirm the activity date and enter the company or contact number.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="date" className="text-sm font-medium text-slate-700">
+                  Activity Date <span className="text-red-500">*</span>
+                </Label>
+                {fieldsLocked ? (
+                  <div className="flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3">
+                    <span className="text-sm text-slate-700">{activity!.date}</span>
+                    <span className="text-xs text-slate-400">(locked)</span>
+                  </div>
+                ) : (
+                  <Input
+                    id="date"
+                    type="date"
+                    {...register('date')}
+                    className="h-10 border-slate-200 text-sm"
+                  />
+                )}
+                <p className="text-xs leading-5 text-slate-400">
+                  Today is selected by default. Past and future dates are allowed.
+                </p>
+                {errors.date && (
+                  <p className="text-xs text-red-500">{errors.date.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="telephone" className="text-sm font-medium text-slate-700">
+                  Company / Contact Number <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="telephone"
+                  type="tel"
+                  {...register('telephone')}
+                  placeholder="+233 xx xxx xxxx"
+                  className="h-10 border-slate-200 text-sm"
+                />
+                {errors.telephone && (
+                  <p className="text-xs text-red-500">{errors.telephone.message}</p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {isCheckUpCallSelected && (
+        <Card className="border-slate-100 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base font-semibold tracking-tight text-slate-900">
+              Check-Up Call Result
+            </CardTitle>
+            <CardDescription className="text-sm text-slate-500">
+              Record what happened when the company was contacted.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RadioGroup
+              value={selectedCallOutcome}
+              onValueChange={value =>
+                setValue('call_outcome', value as ActivityFormData['call_outcome'], {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })
+              }
+              className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+            >
+              {Object.entries(CHECK_UP_CALL_OUTCOME_LABELS).map(([value, label]) => (
+                <label
+                  key={value}
+                  htmlFor={`call-outcome-${value}`}
+                  className={`flex min-h-16 cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition-colors ${
+                    selectedCallOutcome === value
+                      ? 'border-slate-950 bg-slate-50 shadow-sm'
+                      : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/60'
+                  }`}
+                >
+                  <RadioGroupItem
+                    value={value}
+                    id={`call-outcome-${value}`}
+                    className="flex-shrink-0"
+                  />
+                  <span className="text-sm font-semibold leading-5 tracking-tight text-slate-800">
+                    {label}
+                  </span>
+                </label>
+              ))}
+            </RadioGroup>
+            {errors.call_outcome && (
+              <p className="mt-2 text-xs text-red-500">{errors.call_outcome.message}</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {!isAccraMode && (
         <Card className="border-slate-100 shadow-sm">
           <CardHeader className="pb-4">
@@ -515,7 +636,7 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="space-y-2">
                 <Label htmlFor="telephone" className="text-sm font-medium text-slate-700">
-                  Telephone
+                  Company / Contact Number <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="telephone"

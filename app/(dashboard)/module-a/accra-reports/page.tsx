@@ -7,7 +7,8 @@ import { ActivityBreakdownChart } from '@/components/dashboard/ActivityBreakdown
 import { ReportsPeriodSelector } from '../reports/reports-period-selector'
 import { getReportRange } from '@/lib/utils/date-helpers'
 import { formatDate } from '@/lib/utils/date-helpers'
-import { getActivityTypeDisplay } from '@/types/activity.types'
+import { CHECK_UP_CALL_OUTCOME_LABELS, getActivityTypeDisplay } from '@/types/activity.types'
+import type { CallOutcome } from '@/types/database.types'
 
 export const metadata = { title: 'Accra Reports — ROAT' }
 
@@ -20,6 +21,7 @@ type AccraActivity = {
   status: string
   sector: string | null
   detail: string | null
+  call_outcome: CallOutcome | null
   outcome: string | null
 }
 
@@ -80,7 +82,7 @@ export default async function AccraReportsPage({ searchParams }: PageProps) {
 
   const { data } = await supabase
     .from('activities')
-    .select('id, activity_type, date, company_name, location, status, sector, detail, outcome')
+    .select('id, activity_type, date, company_name, location, status, sector, detail, call_outcome, outcome')
     .eq('zonal_office', 'accra')
     .is('deleted_at', null)
     .neq('status', 'cancelled')
@@ -201,7 +203,7 @@ export default async function AccraReportsPage({ searchParams }: PageProps) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100">
-                  {['Date', 'Activity Type', 'Activity Details', 'Status'].map(header => (
+                  {['Date', 'Activity Type', 'Activity Details', 'Call Result', 'Status'].map(header => (
                     <th key={header} className="text-left py-2.5 pr-4 text-xs font-semibold tracking-wide text-slate-400 uppercase">
                       {header}
                     </th>
@@ -218,12 +220,17 @@ export default async function AccraReportsPage({ searchParams }: PageProps) {
                     <td className="min-w-[240px] py-3 pr-4 text-slate-600">
                       {activity.detail ?? '—'}
                     </td>
+                    <td className="min-w-[180px] py-3 pr-4 text-slate-600">
+                      {activity.call_outcome
+                        ? CHECK_UP_CALL_OUTCOME_LABELS[activity.call_outcome]
+                        : '—'}
+                    </td>
                     <td className="py-3 pr-4"><StatusBadge status={activity.status} /></td>
                   </tr>
                 ))}
                 {activities.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="py-12 text-center text-sm text-slate-400">
+                    <td colSpan={5} className="py-12 text-center text-sm text-slate-400">
                       No Accra activities found for this period.
                     </td>
                   </tr>

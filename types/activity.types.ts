@@ -1,4 +1,16 @@
-import type { ActivityType } from '@/types/database.types'
+import type { ActivityType, CallOutcome } from '@/types/database.types'
+
+export const CHECK_UP_CALL_OUTCOMES = [
+  'answered',
+  'call_not_going_through',
+  'number_does_not_exist',
+] as const satisfies readonly CallOutcome[]
+
+export const CHECK_UP_CALL_OUTCOME_LABELS: Record<CallOutcome, string> = {
+  answered: 'Answered',
+  call_not_going_through: 'Call Not Going Through',
+  number_does_not_exist: 'Number Does Not Exist',
+}
 
 export const REGIONAL_ACTIVITY_TYPES = [
   'investor_enquiry',
@@ -124,6 +136,7 @@ export interface Activity {
   sector: string | null
   detail: string | null
   action_required: string | null
+  call_outcome: CallOutcome | null
   status: string
   investment_amount: number | null
   investment_currency: string | null

@@ -49,6 +49,10 @@ export type ActivityType =
   | 'accra_orientation_for_regional_offices'
   | 'accra_other'
 export type ActivityStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled'
+export type CallOutcome =
+  | 'answered'
+  | 'call_not_going_through'
+  | 'number_does_not_exist'
 export type WebinarTaskName =
   | 'notice_to_ministry_of_finance'
   | 'contact_with_mission'
@@ -113,6 +117,7 @@ export interface Database {
           sector: string | null
           detail: string | null
           action_required: string | null
+          call_outcome: CallOutcome | null
           status: ActivityStatus
           created_by: string
           updated_by: string | null
@@ -137,6 +142,7 @@ export interface Database {
           sector?: string | null
           detail?: string | null
           action_required?: string | null
+          call_outcome?: CallOutcome | null
           status?: ActivityStatus
           created_by: string
           updated_by?: string | null
@@ -161,6 +167,7 @@ export interface Database {
           sector?: string | null
           detail?: string | null
           action_required?: string | null
+          call_outcome?: CallOutcome | null
           status?: ActivityStatus
           created_by?: string
           updated_by?: string | null

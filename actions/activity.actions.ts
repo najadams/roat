@@ -112,6 +112,7 @@ export async function createActivity(formData: unknown) {
       .insert({
         ...rest,
         activity_type: activityType,
+        call_outcome: activityType === 'checkup_call' ? rest.call_outcome ?? null : null,
         zonal_office: zone,
         investment_amount: null,
         investment_currency: null,
@@ -146,6 +147,7 @@ export async function createActivity(formData: unknown) {
       uniqueActivityTypes.map(activityType => ({
         ...rest,
         activity_type: activityType,
+        call_outcome: activityType === 'checkup_call' ? rest.call_outcome ?? null : null,
         zonal_office: zone,
         created_by: user.id,
       }))
@@ -222,6 +224,7 @@ export async function updateActivity(id: string, formData: unknown) {
     ? {
         ...rest,
         activity_type: nextActivityType,
+        call_outcome: nextActivityType === 'checkup_call' ? rest.call_outcome ?? null : null,
         ...(formZone ? { zonal_office: formZone } : {}),
         ...(isAccraActivity
           ? {
@@ -238,6 +241,7 @@ export async function updateActivity(id: string, formData: unknown) {
     : {
         ...rest,
         activity_type: current.activity_type,
+        call_outcome: current.activity_type === 'checkup_call' ? rest.call_outcome ?? null : null,
         date: current.date,
         ...(isAccraActivity
           ? {

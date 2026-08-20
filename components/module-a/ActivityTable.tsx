@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/dialog'
 import {
   ACTIVITY_TYPE_LABELS,
+  CHECK_UP_CALL_OUTCOME_LABELS,
   ZONAL_OFFICE_LABELS,
   getActivityTypeDisplay,
   type Activity,
@@ -94,9 +95,21 @@ export function ActivityTable({ activities, showZone = false, canDelete = false 
                           {activity.detail}
                         </p>
                       )}
+                      {activity.activity_type === 'checkup_call' && activity.call_outcome && (
+                        <p className="mt-1 text-xs font-normal leading-5 text-slate-500">
+                          Call result: {CHECK_UP_CALL_OUTCOME_LABELS[activity.call_outcome]}
+                        </p>
+                      )}
                     </div>
                   ) : (
-                    ACTIVITY_TYPE_LABELS[activity.activity_type] ?? activity.activity_type
+                    <div className="min-w-[190px]">
+                      <p>{ACTIVITY_TYPE_LABELS[activity.activity_type] ?? activity.activity_type}</p>
+                      {activity.activity_type === 'checkup_call' && activity.call_outcome && (
+                        <p className="mt-1 text-xs font-normal leading-5 text-slate-500">
+                          Call result: {CHECK_UP_CALL_OUTCOME_LABELS[activity.call_outcome]}
+                        </p>
+                      )}
+                    </div>
                   )}
                 </TableCell>
                 {showZone && (

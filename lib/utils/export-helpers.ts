@@ -5,6 +5,7 @@ import {
   ACCRA_ACTIVITY_TYPE_LABELS,
   ACTIVITY_TYPE_LABELS,
   ACTIVITY_STATUS_LABELS,
+  CHECK_UP_CALL_OUTCOME_LABELS,
   REGIONAL_ACTIVITY_TYPE_LABELS,
   ZONAL_OFFICE_LABELS,
 } from '@/types/activity.types'
@@ -30,6 +31,7 @@ export function exportToExcel(activities: Activity[]): Buffer {
     'Company / Organisation': a.company_name,
     Location: a.location,
     Telephone: a.telephone ?? '',
+    'Call Result': a.call_outcome ? CHECK_UP_CALL_OUTCOME_LABELS[a.call_outcome] : '',
     Email: a.email ?? '',
     Sector: a.sector ?? '',
     Detail: a.detail ?? '',
@@ -104,7 +106,7 @@ export function exportToPDF(
   // Main data table with all 11 columns
   autoTable(doc, {
     startY: summaryEndY + 8,
-    head: [['Date', 'Activity Type', 'Description', 'Zone', 'Company', 'Location', 'Tel', 'Email', 'Sector', 'Detail', 'Action Required', 'Investment', 'Cur', 'Jobs', 'Status']],
+    head: [['Date', 'Activity Type', 'Description', 'Zone', 'Company', 'Location', 'Tel', 'Call Result', 'Email', 'Sector', 'Detail', 'Action Required', 'Investment', 'Cur', 'Jobs', 'Status']],
     body: activities.map(a => [
       formatDateStr(a.date),
       ACTIVITY_TYPE_LABELS[a.activity_type] ?? a.activity_type,
@@ -113,6 +115,7 @@ export function exportToPDF(
       a.company_name,
       a.location,
       a.telephone ?? '',
+      a.call_outcome ? CHECK_UP_CALL_OUTCOME_LABELS[a.call_outcome] : '',
       a.email ?? '',
       a.sector ?? '',
       a.detail ?? '',
@@ -139,14 +142,15 @@ export function exportToPDF(
       4: { cellWidth: 24 },   // Company
       5: { cellWidth: 18 },   // Location
       6: { cellWidth: 16 },   // Tel
-      7: { cellWidth: 24 },   // Email
-      8: { cellWidth: 13 },   // Sector
-      9: { cellWidth: 20 },   // Detail
-      10: { cellWidth: 20 },  // Action Required
-      11: { cellWidth: 16, halign: 'right' }, // Investment
-      12: { cellWidth: 9 },   // Currency
-      13: { cellWidth: 9, halign: 'right' }, // Jobs
-      14: { cellWidth: 13 },  // Status
+      7: { cellWidth: 22 },   // Call Result
+      8: { cellWidth: 20 },   // Email
+      9: { cellWidth: 12 },   // Sector
+      10: { cellWidth: 18 },  // Detail
+      11: { cellWidth: 18 },  // Action Required
+      12: { cellWidth: 15, halign: 'right' }, // Investment
+      13: { cellWidth: 8 },   // Currency
+      14: { cellWidth: 8, halign: 'right' }, // Jobs
+      15: { cellWidth: 12 },  // Status
     },
   })
 
@@ -326,7 +330,7 @@ export function exportAccraReportToPDF(
 
       autoTable(doc, {
         startY: cursorY + 11,
-        head: [['Date', 'Status', 'Activity Type', 'Activity Details', 'Recorded']],
+        head: [['Date', 'Status', 'Activity Type', 'Activity Details', 'Call Result', 'Recorded']],
         body: group.rows
           .sort((a, b) => b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at))
           .map(activity => [
@@ -334,6 +338,7 @@ export function exportAccraReportToPDF(
             ACTIVITY_STATUS_LABELS[activity.status] ?? activity.status.replace(/_/g, ' '),
             ACTIVITY_TYPE_LABELS[activity.activity_type] ?? activity.activity_type.replace(/_/g, ' '),
             activity.detail ?? '',
+            activity.call_outcome ? CHECK_UP_CALL_OUTCOME_LABELS[activity.call_outcome] : '',
             new Date(activity.created_at).toLocaleDateString('en-GB', {
               day: '2-digit',
               month: 'short',
@@ -348,11 +353,12 @@ export function exportAccraReportToPDF(
         bodyStyles: { fontSize: 8, textColor: [30, 41, 59], cellPadding: 2.6, valign: 'top' },
         alternateRowStyles: { fillColor: [248, 250, 252] },
         columnStyles: {
-          0: { cellWidth: 24 },
-          1: { cellWidth: 24 },
-          2: { cellWidth: 70 },
-          3: { cellWidth: 121 },
-          4: { cellWidth: 31 },
+          0: { cellWidth: 22 },
+          1: { cellWidth: 22 },
+          2: { cellWidth: 60 },
+          3: { cellWidth: 90 },
+          4: { cellWidth: 45 },
+          5: { cellWidth: 31 },
         },
       })
 

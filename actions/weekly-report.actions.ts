@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { weeklyReportSchema } from '@/lib/validations/weekly-report.schema'
 import { getTargetsForPeriod } from '@/actions/target.actions'
 import { getWeeksInQuarter, formatDate } from '@/lib/utils/date-helpers'
-import { ZONAL_OFFICE_LABELS } from '@/types/activity.types'
+import { CHECK_UP_CALL_OUTCOME_LABELS, ZONAL_OFFICE_LABELS } from '@/types/activity.types'
 import {
   WEEKLY_REPORT_CATEGORIES,
   THEMATIC_AREAS,
@@ -142,7 +142,7 @@ export async function getWeeklyReportData(
   // Activities in the week (RLS already scopes officers to their zone)
   const { data: activities } = await supabase
     .from('activities')
-    .select('id, activity_type, company_name, date, detail, action_required, outcome')
+    .select('id, activity_type, company_name, date, detail, action_required, call_outcome, outcome')
     .eq('zonal_office', zone)
     .is('deleted_at', null)
     .neq('status', 'cancelled')
@@ -212,7 +212,10 @@ export async function getWeeklyReportData(
       activityDescriptions: inArea.map(r => r.detail).filter(Boolean).join('\n'),
       dates: inArea.map(r => formatDate(r.date)).join(', '),
       partners: inArea.map(r => r.company_name).filter(Boolean).join('; '),
-      outcomes: inArea.map(r => r.outcome).filter(Boolean).join('\n'),
+      outcomes: inArea
+        .map(r => r.outcome || (r.call_outcome ? CHECK_UP_CALL_OUTCOME_LABELS[r.call_outcome] : null))
+        .filter(Boolean)
+        .join('\n'),
       evidence: inArea.flatMap(r => attByActivity[r.id] ?? []).join(', '),
       comments: inArea.map(r => r.action_required).filter(Boolean).join('\n'),
     }

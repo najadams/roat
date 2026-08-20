@@ -173,6 +173,16 @@ CREATE TABLE activities (
   sector          TEXT,
   detail          TEXT,
   action_required TEXT,
+  call_outcome    TEXT CHECK (
+    call_outcome IS NULL OR (
+      activity_type = 'checkup_call' AND
+      call_outcome IN (
+        'answered',
+        'call_not_going_through',
+        'number_does_not_exist'
+      )
+    )
+  ),
   status          activity_status NOT NULL DEFAULT 'pending',
   created_by      UUID NOT NULL REFERENCES profiles(id),
   updated_by      UUID REFERENCES profiles(id),

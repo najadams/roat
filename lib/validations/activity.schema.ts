@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { ActivityType, ZonalOffice } from '@/types/database.types'
 import {
   ACCRA_OTHER_ACTIVITY_TYPE,
+  CHECK_UP_CALL_OUTCOMES,
   REGIONAL_ACTIVITY_TYPES,
   SELECTABLE_ACTIVITY_TYPES,
 } from '@/types/activity.types'
@@ -50,11 +51,16 @@ const activityBaseSchema = z.object({
   date: z.string().min(1, 'Date is required'),
   company_name: z.string().min(1, 'Company name is required').max(200),
   location: z.string().min(1, 'Location is required').max(200),
-  telephone: z.string().refine(isValidPhone, PHONE_ERROR_MESSAGE).optional(),
+  telephone: z
+    .string()
+    .trim()
+    .min(1, 'Company telephone number is required')
+    .refine(isValidPhone, PHONE_ERROR_MESSAGE),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   sector: z.string().optional(),
   detail: z.string().optional(),
   action_required: z.string().optional(),
+  call_outcome: z.enum(CHECK_UP_CALL_OUTCOMES).optional(),
   custom_activity_description: z.string().optional(),
   outcome: z.string().optional(),
   // Investment outcomes (optional) — power the impact reporting
@@ -88,6 +94,13 @@ export const activitySchema = activityBaseSchema
         message: 'Enter a description for Other',
       })
     }
+    if (data.activity_type === 'checkup_call' && !data.call_outcome) {
+      context.addIssue({
+        code: 'custom',
+        path: ['call_outcome'],
+        message: 'Select the result of the check-up call',
+      })
+    }
   })
 
 export const createActivitySchema = activityBaseSchema
@@ -105,6 +118,13 @@ export const createActivitySchema = activityBaseSchema
         code: 'custom',
         path: ['custom_activity_description'],
         message: 'Enter a description for Other',
+      })
+    }
+    if (data.activity_types.includes('checkup_call') && !data.call_outcome) {
+      context.addIssue({
+        code: 'custom',
+        path: ['call_outcome'],
+        message: 'Select the result of the check-up call',
       })
     }
   })

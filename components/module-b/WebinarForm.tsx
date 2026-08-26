@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { TASK_LABELS, TASK_ORDER } from '@/types/webinar.types'
 
 export function WebinarForm() {
   const router = useRouter()
@@ -49,12 +50,12 @@ export function WebinarForm() {
           </CardTitle>
           <CardDescription className="text-sm text-slate-500">
             Enter the country for which this webinar is being organised.
-            A 6-step workflow will be automatically created.
+            A 9-step workflow will be automatically created.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div className="space-y-2">
+            <div className="space-y-2" data-tour="webinar-country">
               <Label htmlFor="country" className="text-sm font-medium text-slate-700">
                 Country Name <span className="text-red-500">*</span>
               </Label>
@@ -69,7 +70,7 @@ export function WebinarForm() {
               )}
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2" data-tour="webinar-code">
               <Label htmlFor="country_code" className="text-sm font-medium text-slate-700">
                 ISO Country Code
                 <span className="text-slate-400 font-normal ml-1">(2-letter, e.g. FR)</span>
@@ -87,7 +88,7 @@ export function WebinarForm() {
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2" data-tour="webinar-notes">
             <Label htmlFor="notes" className="text-sm font-medium text-slate-700">
               Notes
             </Label>
@@ -103,7 +104,7 @@ export function WebinarForm() {
       </Card>
 
       {/* Workflow preview */}
-      <Card className="border-slate-100 shadow-sm bg-slate-50">
+      <Card className="border-slate-100 shadow-sm bg-slate-50" data-tour="webinar-workflow">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold text-slate-700 tracking-tight">
             Workflow Preview
@@ -114,19 +115,12 @@ export function WebinarForm() {
         </CardHeader>
         <CardContent>
           <ol className="space-y-2">
-            {[
-              'Notice to Ministry of Finance',
-              'Contact with Mission',
-              'Date Confirmation with Mission',
-              'Flyer Distribution',
-              'Hosting of Webinar',
-              'Webinar Report & Leads Transfer',
-            ].map((step, i) => (
-              <li key={step} className="flex items-center gap-3 text-sm">
+            {TASK_ORDER.map((taskName, i) => (
+              <li key={taskName} className="flex items-center gap-3 text-sm">
                 <span className="h-6 w-6 rounded-full bg-slate-200 text-slate-500 text-xs font-semibold flex items-center justify-center flex-shrink-0">
                   {i + 1}
                 </span>
-                <span className="text-slate-600">{step}</span>
+                <span className="text-slate-600">{TASK_LABELS[taskName]}</span>
                 <span className="ml-auto text-xs text-slate-400">5 working days</span>
               </li>
             ))}
@@ -136,7 +130,7 @@ export function WebinarForm() {
 
       <Separator />
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between" data-tour="form-actions">
         <Button
           type="button"
           variant="ghost"

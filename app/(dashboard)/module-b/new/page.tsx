@@ -25,7 +25,7 @@ export default async function NewWebinarPage() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div data-tour="page-header">
         <Link
           href="/module-b/webinars"
           className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-700 transition-colors mb-4"

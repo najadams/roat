@@ -251,7 +251,7 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Activity Type / Accra Description */}
-      <Card className="border-slate-100 shadow-sm">
+      <Card className="border-slate-100 shadow-sm" data-tour="activity-type">
         <CardHeader className="pb-4">
           <CardTitle className="text-base font-semibold text-slate-900 tracking-tight">
             Activity Type
@@ -422,7 +422,7 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
 
       {/* Zonal Office — admins only (officers inherit their own zone) */}
       {isAdmin && (
-        <Card className="border-slate-100 shadow-sm">
+        <Card className="border-slate-100 shadow-sm" data-tour="activity-zone">
           <CardHeader className="pb-4">
             <CardTitle className="text-base font-semibold text-slate-900 tracking-tight">
               Zonal Office
@@ -448,7 +448,7 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
       )}
 
       {isAccraMode && (
-        <Card className="border-slate-100 shadow-sm">
+        <Card className="border-slate-100 shadow-sm" data-tour="activity-core">
           <CardHeader className="pb-4">
             <CardTitle className="text-base font-semibold tracking-tight text-slate-900">
               Activity Details
@@ -505,7 +505,7 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
       )}
 
       {isCheckUpCallSelected && (
-        <Card className="border-slate-100 shadow-sm">
+        <Card className="border-slate-100 shadow-sm" data-tour="activity-conditional">
           <CardHeader className="pb-4">
             <CardTitle className="text-base font-semibold tracking-tight text-slate-900">
               Check-Up Call Result
@@ -554,7 +554,7 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
       )}
 
       {!isAccraMode && (
-        <Card className="border-slate-100 shadow-sm">
+        <Card className="border-slate-100 shadow-sm" data-tour="activity-core">
           <CardHeader className="pb-4">
             <CardTitle className="text-base font-semibold text-slate-900 tracking-tight">
               Core Details
@@ -670,7 +670,7 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
       )}
 
       {!isAccraMode && (
-        <Card className="border-slate-100 shadow-sm">
+        <Card className="border-slate-100 shadow-sm" data-tour="activity-investment">
           <CardHeader className="pb-4">
             <CardTitle className="text-base font-semibold text-slate-900 tracking-tight">
               Investment Outcome
@@ -739,7 +739,7 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
       )}
 
       {!isAccraMode && (
-        <Card className="border-slate-100 shadow-sm">
+        <Card className="border-slate-100 shadow-sm" data-tour="activity-notes">
           <CardHeader className="pb-4">
             <CardTitle className="text-base font-semibold text-slate-900 tracking-tight">
               Notes & Follow-up
@@ -818,7 +818,7 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
       )}
 
       {/* Status */}
-      <Card className="border-slate-100 shadow-sm">
+      <Card className="border-slate-100 shadow-sm" data-tour="activity-status">
         <CardHeader className="pb-4">
           <CardTitle className="text-base font-semibold text-slate-900 tracking-tight">
             Status
@@ -849,7 +849,7 @@ export function ActivityForm({ activity, isAdmin = false, userZone = null }: Act
 
       <Separator />
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between" data-tour="form-actions">
         <Button
           type="button"
           variant="ghost"

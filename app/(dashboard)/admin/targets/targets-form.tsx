@@ -113,7 +113,7 @@ export function TargetsForm({
   return (
     <div className="space-y-6">
       {/* Zone selector */}
-      <Card className="border-slate-100 shadow-sm">
+      <Card className="border-slate-100 shadow-sm" data-tour="target-zone">
         <CardHeader className="pb-3">
           <CardTitle className="text-xs font-semibold tracking-widest uppercase text-slate-400">
             Zonal Office
@@ -150,7 +150,7 @@ export function TargetsForm({
       </Card>
 
       {/* Quarter selector */}
-      <Card className="border-slate-100 shadow-sm">
+      <Card className="border-slate-100 shadow-sm" data-tour="target-period">
         <CardHeader className="pb-3">
           <CardTitle className="text-xs font-semibold tracking-widest uppercase text-slate-400">
             Quarter
@@ -200,7 +200,7 @@ export function TargetsForm({
       </Card>
 
       {/* Targets grid */}
-      <Card className="border-slate-100 shadow-sm">
+      <Card className="border-slate-100 shadow-sm" data-tour="target-grid">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-xs font-semibold tracking-widest uppercase text-slate-400">
@@ -250,6 +250,7 @@ export function TargetsForm({
       <div className="flex justify-end">
         <Button
           onClick={handleSave}
+          data-tour="target-save"
           disabled={isPending || isLoading}
           className="bg-slate-900 hover:bg-slate-700 text-white px-8 h-10 text-sm font-medium tracking-wide"
         >

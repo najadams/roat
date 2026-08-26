@@ -22,14 +22,14 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div data-tour="page-header">
         <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Settings</h1>
         <p className="mt-1 text-sm text-slate-500">
           System configuration and preferences.
         </p>
       </div>
 
-      <Card className="border-slate-100 shadow-sm">
+      <Card className="border-slate-100 shadow-sm" data-tour="delay-settings">
         <CardHeader>
           <CardTitle className="text-sm font-semibold text-slate-900 tracking-tight">
             Delay Alarm System
@@ -59,7 +59,7 @@ export default async function SettingsPage() {
 
       <Separator />
 
-      <Card className="border-slate-100 shadow-sm">
+      <Card className="border-slate-100 shadow-sm" data-tour="system-information">
         <CardHeader>
           <CardTitle className="text-sm font-semibold text-slate-900 tracking-tight">
             System Information

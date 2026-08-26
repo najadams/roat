@@ -104,6 +104,30 @@ export interface Database {
         }
         Relationships: []
       }
+      user_tour_progress: {
+        Row: {
+          user_id: string
+          tour_id: string
+          tour_version: number
+          outcome: 'completed' | 'skipped'
+          seen_at: string
+        }
+        Insert: {
+          user_id: string
+          tour_id: string
+          tour_version: number
+          outcome: 'completed' | 'skipped'
+          seen_at?: string
+        }
+        Update: {
+          user_id?: string
+          tour_id?: string
+          tour_version?: number
+          outcome?: 'completed' | 'skipped'
+          seen_at?: string
+        }
+        Relationships: []
+      }
       activities: {
         Row: {
           id: string

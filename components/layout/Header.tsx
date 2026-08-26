@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { Menu, LogOut, User } from 'lucide-react'
 import { NotificationBell } from './NotificationBell'
+import { GuideButton } from '@/components/tours/GuideButton'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -58,6 +59,7 @@ export function Header({ profile, onMenuClick }: HeaderProps) {
           variant="ghost"
           size="icon"
           onClick={onMenuClick}
+          data-tour="mobile-menu"
           className="lg:hidden text-slate-600"
         >
           <Menu className="h-5 w-5" />
@@ -70,10 +72,13 @@ export function Header({ profile, onMenuClick }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-1">
-        <NotificationBell />
+        <GuideButton />
+        <div data-tour="notifications">
+          <NotificationBell />
+        </div>
         <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="flex items-center gap-3 h-auto py-1.5 px-2 hover:bg-slate-50">
+          <Button data-tour="profile-menu" variant="ghost" className="flex items-center gap-3 h-auto py-1.5 px-2 hover:bg-slate-50">
             <div className="hidden sm:block text-right">
               <p className="text-sm font-medium text-slate-900">{profile?.full_name ?? 'User'}</p>
               <p className="text-xs text-slate-400">{roleLabel}</p>

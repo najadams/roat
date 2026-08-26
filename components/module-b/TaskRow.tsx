@@ -175,6 +175,7 @@ export function TaskRow({ task, canComplete = false, canEditDeadline = false }: 
           {canComplete && isActive && (
             <Button
               size="sm"
+              data-tour="webinar-complete"
               onClick={() => setShowComplete(true)}
               className="h-8 text-xs bg-slate-900 hover:bg-slate-800 text-white px-3"
             >

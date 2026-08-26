@@ -150,6 +150,7 @@ export function UserTable({ users: initialUsers }: UserTableProps) {
       <div className="flex justify-end">
         <Button
           onClick={openInvite}
+          data-tour="user-invite"
           className="bg-slate-900 hover:bg-slate-800 text-white text-sm gap-2"
         >
           <UserPlus className="h-4 w-4" />
@@ -157,7 +158,7 @@ export function UserTable({ users: initialUsers }: UserTableProps) {
         </Button>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-slate-100">
+      <div className="overflow-x-auto rounded-lg border border-slate-100" data-tour="user-table">
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50 hover:bg-slate-50">
@@ -202,6 +203,7 @@ export function UserTable({ users: initialUsers }: UserTableProps) {
                     <Button
                       variant="ghost"
                       size="icon"
+                      data-tour="user-password"
                       className="h-8 w-8 text-slate-400 hover:text-slate-900"
                       title="Reset password"
                       onClick={() => setResetting(user)}
@@ -211,6 +213,7 @@ export function UserTable({ users: initialUsers }: UserTableProps) {
                     <Button
                       variant="ghost"
                       size="icon"
+                      data-tour="user-edit"
                       className="h-8 w-8 text-slate-400 hover:text-slate-900"
                       title="Edit user"
                       onClick={() => openEdit(user)}

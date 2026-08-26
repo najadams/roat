@@ -26,7 +26,7 @@ export default async function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div data-tour="page-header">
         <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">User Management</h1>
         <p className="mt-1 text-sm text-slate-500">
           Manage user accounts, roles, and zonal office assignments.

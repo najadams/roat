@@ -47,7 +47,7 @@ export function ActivityFilters({ showZoneFilter = false }: ActivityFiltersProps
   const hasFilters = searchParams.toString().length > 0
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-wrap items-center gap-3" data-tour="activity-filters">
       <Select
         value={searchParams.get('type') ?? 'all'}
         onValueChange={val => handleFilter('type', val)}

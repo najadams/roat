@@ -116,7 +116,7 @@ export default async function AccraReportsPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4" data-tour="page-header">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Accra Reports</h1>
           <p className="mt-1 text-sm text-slate-500">
@@ -136,7 +136,7 @@ export default async function AccraReportsPage({ searchParams }: PageProps) {
         isAdmin={false}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4" data-tour="report-summary">
         {[
           { title: 'Activities', value: total, note: 'Accra records in period' },
           { title: 'Completed', value: completed, note: 'Completed records' },
@@ -157,7 +157,7 @@ export default async function AccraReportsPage({ searchParams }: PageProps) {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-tour="report-charts">
         <Card className="border-slate-100 shadow-sm">
           <CardHeader className="pb-0">
             <CardTitle className="text-sm font-semibold text-slate-900 tracking-tight">
@@ -192,7 +192,7 @@ export default async function AccraReportsPage({ searchParams }: PageProps) {
         </Card>
       </div>
 
-      <Card className="border-slate-100 shadow-sm">
+      <Card className="border-slate-100 shadow-sm" data-tour="report-table">
         <CardHeader>
           <CardTitle className="text-sm font-semibold text-slate-900 tracking-tight">
             Activity Register

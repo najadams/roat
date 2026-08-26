@@ -190,7 +190,7 @@ export async function ReportsContent({ profile, searchParams }: ReportsContentPr
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between" data-tour="page-header">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Reports</h1>
           <p className="mt-1 text-sm text-slate-500">
@@ -211,7 +211,7 @@ export async function ReportsContent({ profile, searchParams }: ReportsContentPr
       />
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4" data-tour="report-summary">
         <Card className="border-slate-100 shadow-sm">
           <CardHeader className="pb-2 pt-5 px-5">
             <CardTitle className="text-xs font-semibold tracking-widest uppercase text-slate-400">
@@ -259,7 +259,7 @@ export async function ReportsContent({ profile, searchParams }: ReportsContentPr
       </div>
 
       {/* Investment Impact */}
-      <Card className="border-slate-100 shadow-sm">
+      <Card className="border-slate-100 shadow-sm" data-tour="report-impact">
         <CardHeader className="pb-2 pt-5 px-5">
           <CardTitle className="text-sm font-semibold text-slate-900 tracking-tight">
             Investment Impact
@@ -311,7 +311,7 @@ export async function ReportsContent({ profile, searchParams }: ReportsContentPr
       </Card>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-tour="report-charts">
         <Card className="border-slate-100 shadow-sm">
           <CardHeader className="pb-0">
             <CardTitle className="text-sm font-semibold text-slate-900 tracking-tight">
@@ -341,7 +341,7 @@ export async function ReportsContent({ profile, searchParams }: ReportsContentPr
       </div>
 
       {/* Activity type table */}
-      <Card className="border-slate-100 shadow-sm">
+      <Card className="border-slate-100 shadow-sm" data-tour="report-table">
         <CardHeader>
           <CardTitle className="text-sm font-semibold text-slate-900 tracking-tight">
             Activity Type Summary

@@ -44,7 +44,7 @@ export default async function WebinarsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between" data-tour="page-header">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Webinar Pipeline</h1>
           <p className="mt-1 text-sm text-slate-500">
@@ -52,7 +52,7 @@ export default async function WebinarsPage() {
           </p>
         </div>
         {profile?.role !== 'viewer' && (
-          <Button asChild className="gap-2 bg-slate-900 hover:bg-slate-800 text-sm font-medium">
+          <Button data-tour="primary-action" asChild className="gap-2 bg-slate-900 hover:bg-slate-800 text-sm font-medium">
             <Link href="/module-b/new">
               <Plus className="h-4 w-4" />
               Add Country
@@ -62,7 +62,7 @@ export default async function WebinarsPage() {
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4" data-tour="webinar-summary">
         <Card className="border-slate-100 shadow-sm">
           <CardHeader className="pb-2 pt-5 px-5">
             <CardTitle className="text-xs font-semibold tracking-widest uppercase text-slate-400">
@@ -99,7 +99,7 @@ export default async function WebinarsPage() {
       </div>
 
       {delayed.length > 0 && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-5 py-4 flex items-start gap-3">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-5 py-4 flex items-start gap-3" data-tour="webinar-alert">
           <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-red-800">Attention Required</p>

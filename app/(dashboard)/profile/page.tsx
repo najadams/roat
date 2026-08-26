@@ -67,7 +67,7 @@ export default async function ProfilePage() {
   return (
     <div className="max-w-2xl space-y-6">
       {/* Page header */}
-      <div>
+      <div data-tour="page-header">
         <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">My Profile</h1>
         <p className="mt-1 text-sm text-slate-500">
           View your account details and manage your settings.
@@ -75,7 +75,7 @@ export default async function ProfilePage() {
       </div>
 
       {/* Avatar + identity header */}
-      <Card className="border-slate-100 shadow-sm">
+      <Card className="border-slate-100 shadow-sm" data-tour="profile-identity">
         <CardContent className="pt-6 pb-6">
           <div className="flex items-center gap-5">
             <div className="h-16 w-16 rounded-full bg-slate-900 flex items-center justify-center flex-shrink-0">
@@ -105,7 +105,7 @@ export default async function ProfilePage() {
       </Card>
 
       {/* Account information */}
-      <Card className="border-slate-100 shadow-sm">
+      <Card className="border-slate-100 shadow-sm" data-tour="profile-information">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold text-slate-900 tracking-tight">
             Account Information

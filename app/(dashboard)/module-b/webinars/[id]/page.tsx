@@ -61,7 +61,7 @@ export default async function WebinarDetailPage({
 
   return (
     <div className="space-y-6">
-      <div>
+      <div data-tour="page-header">
         <Link
           href="/module-b/webinars"
           className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-700 transition-colors mb-4"
@@ -94,7 +94,7 @@ export default async function WebinarDetailPage({
       </div>
 
       {/* Progress bar */}
-      <div>
+      <div data-tour="webinar-progress">
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-xs text-slate-500">{completed} of 9 tasks completed</span>
           <span className="text-xs font-medium text-slate-700">{pct}%</span>
@@ -111,7 +111,7 @@ export default async function WebinarDetailPage({
 
       {/* Notes */}
       {webinar.notes && (
-        <Card className="border-slate-100 shadow-sm">
+        <Card className="border-slate-100 shadow-sm" data-tour="webinar-notes">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold text-slate-700">Notes</CardTitle>
           </CardHeader>
@@ -122,7 +122,7 @@ export default async function WebinarDetailPage({
       )}
 
       {/* Task pipeline */}
-      <Card className="border-slate-100 shadow-sm overflow-hidden">
+      <Card className="border-slate-100 shadow-sm overflow-hidden" data-tour="webinar-tasks">
         <CardHeader className="pb-3 border-b border-slate-100">
           <CardTitle className="text-sm font-semibold text-slate-900 tracking-tight">
             Task Pipeline
@@ -135,7 +135,7 @@ export default async function WebinarDetailPage({
                 <th className="text-left px-5 py-3 text-xs font-semibold tracking-wide text-slate-400 uppercase">Task</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold tracking-wide text-slate-400 uppercase">Status</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold tracking-wide text-slate-400 uppercase">Started</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold tracking-wide text-slate-400 uppercase">Deadline</th>
+                <th data-tour="webinar-deadline" className="text-left px-5 py-3 text-xs font-semibold tracking-wide text-slate-400 uppercase">Deadline</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold tracking-wide text-slate-400 uppercase">Info</th>
                 <th className="px-5 py-3" />
               </tr>
@@ -151,7 +151,7 @@ export default async function WebinarDetailPage({
 
       {/* Task notes summary */}
       {tasks.some(t => t.notes) && (
-        <Card className="border-slate-100 shadow-sm">
+        <Card className="border-slate-100 shadow-sm" data-tour="webinar-task-notes">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold text-slate-900 tracking-tight">Task Notes</CardTitle>
           </CardHeader>

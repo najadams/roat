@@ -55,7 +55,7 @@ export function ExportButton({ period, zone, year, quarter, month, week }: Expor
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" disabled={loading} className="gap-2 text-sm border-slate-200">
+        <Button data-tour="report-export" variant="outline" size="sm" disabled={loading} className="gap-2 text-sm border-slate-200">
           <Download className="h-4 w-4" />
           {loading ? 'Exporting...' : 'Export'}
         </Button>

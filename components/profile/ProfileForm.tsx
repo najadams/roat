@@ -63,7 +63,7 @@ export function ProfileForm({ profile }: { profile: Profile }) {
   return (
     <div className="space-y-6">
       {/* Display name */}
-      <Card className="border-slate-100 shadow-sm">
+      <Card className="border-slate-100 shadow-sm" data-tour="profile-name">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold text-slate-900 tracking-tight">
             Display Name
@@ -97,7 +97,7 @@ export function ProfileForm({ profile }: { profile: Profile }) {
       </Card>
 
       {/* Change password */}
-      <Card className="border-slate-100 shadow-sm">
+      <Card className="border-slate-100 shadow-sm" data-tour="profile-password">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold text-slate-900 tracking-tight">
             Change Password

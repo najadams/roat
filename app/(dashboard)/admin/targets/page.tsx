@@ -42,7 +42,7 @@ export default async function TargetsPage({
 
   return (
     <div className="max-w-3xl mx-auto space-y-8 py-2">
-      <div>
+      <div data-tour="page-header">
         <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Activity Targets</h1>
         <p className="mt-1 text-sm text-slate-500">
           Set quarterly performance targets per activity type for each zonal office.

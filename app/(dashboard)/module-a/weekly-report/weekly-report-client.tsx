@@ -79,7 +79,7 @@ export function WeeklyReportClient({ data, canEdit, canPickZone }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="flex items-center justify-between flex-wrap gap-3" data-tour="page-header">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Weekly Report</h1>
           <p className="mt-1 text-sm text-slate-500">
@@ -102,14 +102,14 @@ export function WeeklyReportClient({ data, canEdit, canPickZone }: Props) {
             onChange={e => navigate({ week: e.target.value })}
             className="h-10 w-40 text-sm border-slate-200"
           />
-          <Button asChild variant="outline" size="sm" className="border-slate-200">
+          <Button data-tour="weekly-export" asChild variant="outline" size="sm" className="border-slate-200">
             <a href={exportUrl}>Export Excel</a>
           </Button>
         </div>
       </div>
 
       {/* Section A */}
-      <Card className="border-slate-100 shadow-sm">
+      <Card className="border-slate-100 shadow-sm" data-tour="weekly-identity">
         <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-5">
           <Field label="Zonal Office" value={data.zoneLabel} />
           <Field label="Officer" value={data.officerName || '—'} />
@@ -118,13 +118,13 @@ export function WeeklyReportClient({ data, canEdit, canPickZone }: Props) {
       </Card>
 
       {/* Section B */}
-      <Card className="border-slate-100 shadow-sm overflow-hidden">
+      <Card className="border-slate-100 shadow-sm overflow-hidden" data-tour="weekly-summary">
         <CardHeader className="pb-2 pt-5 px-5 flex-row items-center justify-between">
           <CardTitle className="text-sm font-semibold text-slate-900 tracking-tight">
             Section B — Weekly Summary
           </CardTitle>
           {canEdit && (
-            <Button onClick={saveTargets} disabled={savingTargets} variant="outline" size="sm" className="border-slate-200">
+            <Button data-tour="weekly-target-actions" onClick={saveTargets} disabled={savingTargets} variant="outline" size="sm" className="border-slate-200">
               {savingTargets ? 'Saving…' : 'Save Targets'}
             </Button>
           )}
@@ -177,7 +177,7 @@ export function WeeklyReportClient({ data, canEdit, canPickZone }: Props) {
       </Card>
 
       {/* Section C */}
-      <Card className="border-slate-100 shadow-sm">
+      <Card className="border-slate-100 shadow-sm" data-tour="weekly-narrative">
         <CardHeader className="pb-2 pt-5 px-5">
           <CardTitle className="text-sm font-semibold text-slate-900 tracking-tight">
             Section C — Key Highlights
@@ -198,7 +198,7 @@ export function WeeklyReportClient({ data, canEdit, canPickZone }: Props) {
       </Card>
 
       {/* Section D */}
-      <Card className="border-slate-100 shadow-sm overflow-hidden">
+      <Card className="border-slate-100 shadow-sm overflow-hidden" data-tour="weekly-detail">
         <CardHeader className="pb-2 pt-5 px-5">
           <CardTitle className="text-sm font-semibold text-slate-900 tracking-tight">
             Section D — Detailed Activity Tracker

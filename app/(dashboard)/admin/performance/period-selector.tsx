@@ -65,7 +65,7 @@ export function PerformancePeriodSelector() {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-wrap items-center gap-3" data-tour="performance-filters">
       {/* Period type pills */}
       <div className="flex rounded-lg border border-slate-200 overflow-hidden">
         {(['weekly', 'monthly', 'quarterly', 'annual'] as const).map(p => (

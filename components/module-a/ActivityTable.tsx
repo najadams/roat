@@ -57,7 +57,7 @@ export function ActivityTable({ activities, showZone = false, canDelete = false 
 
   if (activities.length === 0) {
     return (
-      <div className="text-center py-16 text-slate-400">
+      <div className="text-center py-16 text-slate-400" data-tour="activity-results">
         <p className="text-sm">No activities found.</p>
       </div>
     )
@@ -65,7 +65,7 @@ export function ActivityTable({ activities, showZone = false, canDelete = false 
 
   return (
     <>
-      <div className="overflow-x-auto rounded-lg border border-slate-100">
+      <div className="overflow-x-auto rounded-lg border border-slate-100" data-tour="activity-results">
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50 hover:bg-slate-50">
@@ -121,11 +121,11 @@ export function ActivityTable({ activities, showZone = false, canDelete = false 
                   {activity.company_name}
                 </TableCell>
                 <TableCell className="text-sm text-slate-600 py-3.5">{activity.location}</TableCell>
-                <TableCell className="py-3.5">
+                <TableCell className="py-3.5" data-tour="activity-status">
                   <StatusBadge status={activity.status} />
                 </TableCell>
                 <TableCell className="py-3.5">
-                  <div className="flex items-center justify-end gap-1">
+                  <div className="flex items-center justify-end gap-1" data-tour="activity-row-actions">
                     <Button variant="ghost" size="icon" asChild className="h-8 w-8 text-slate-400 hover:text-slate-900">
                       <Link href={`/module-a/activities/${activity.id}`}>
                         <ExternalLink className="h-3.5 w-3.5" />

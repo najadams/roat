@@ -42,3 +42,9 @@ next-env.d.ts
 
 # Local Netlify folder
 .netlify
+
+# local development tools
+/.codex/
+/.playwright-mcp/
+/supabase/.temp/
+/scripts/apply-missing-migrations.py

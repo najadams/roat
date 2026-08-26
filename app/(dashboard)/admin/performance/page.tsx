@@ -203,7 +203,7 @@ export default async function PerformancePage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-4" data-tour="page-header">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Performance Overview</h1>
           <p className="mt-1 text-sm text-slate-500">
@@ -224,7 +224,7 @@ export default async function PerformancePage({
       </Suspense>
 
       {/* Zone Summary Strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3" data-tour="performance-zones">
         {zoneSummary.map(({ zone, label, met, total, tier }) => {
           const targetsHref = `/admin/targets?zone=${zone}&year=${year}&quarter=${activeQuarter > 0 ? activeQuarter : quarter}`
           return (
@@ -256,7 +256,7 @@ export default async function PerformancePage({
       </div>
 
       {/* Cross-Zone Grid */}
-      <Card className="border-slate-100 shadow-sm">
+      <Card className="border-slate-100 shadow-sm" data-tour="performance-grid">
         <CardHeader className="pb-3">
           <CardTitle className="text-xs font-semibold tracking-widest uppercase text-slate-400">
             Activity Type Breakdown by Zone
@@ -351,7 +351,7 @@ export default async function PerformancePage({
       </Card>
 
       {/* Legend */}
-      <div className="flex flex-wrap items-center gap-5 text-xs text-slate-500">
+      <div className="flex flex-wrap items-center gap-5 text-xs text-slate-500" data-tour="performance-legend">
         <span className="font-medium text-slate-400 uppercase tracking-wide">Legend</span>
         {[
           { dot: 'bg-emerald-500', label: 'Thriving (≥ 100%)' },

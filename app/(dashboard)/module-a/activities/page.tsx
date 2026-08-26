@@ -61,7 +61,7 @@ export default async function ActivitiesPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between" data-tour="page-header">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Activities</h1>
           <p className="mt-1 text-sm text-slate-500">
@@ -69,7 +69,7 @@ export default async function ActivitiesPage({ searchParams }: PageProps) {
           </p>
         </div>
         {profile?.role !== 'viewer' && (
-          <Button asChild className="gap-2 bg-slate-900 hover:bg-slate-800 text-sm font-medium">
+          <Button data-tour="primary-action" asChild className="gap-2 bg-slate-900 hover:bg-slate-800 text-sm font-medium">
             <Link href="/module-a/new">
               <Plus className="h-4 w-4" />
               Log Activity

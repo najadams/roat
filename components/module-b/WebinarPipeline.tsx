@@ -84,7 +84,7 @@ function PipelineStepper({ tasks }: { tasks: WebinarWithTasks['webinar_tasks'] }
 export function WebinarPipeline({ webinars }: WebinarPipelineProps) {
   if (webinars.length === 0) {
     return (
-      <div className="text-center py-16 text-slate-400 border border-slate-100 rounded-xl">
+      <div className="text-center py-16 text-slate-400 border border-slate-100 rounded-xl" data-tour="webinar-pipeline">
         <Circle className="h-8 w-8 mx-auto mb-3 text-slate-200" />
         <p className="text-sm font-medium text-slate-500">No webinars tracked yet</p>
         <p className="text-xs text-slate-400 mt-1">Add a country to begin tracking the pipeline.</p>
@@ -93,7 +93,7 @@ export function WebinarPipeline({ webinars }: WebinarPipelineProps) {
   }
 
   return (
-    <div className="rounded-xl border border-slate-100 overflow-hidden shadow-sm">
+    <div className="rounded-xl border border-slate-100 overflow-hidden shadow-sm" data-tour="webinar-pipeline">
       {/* Table header */}
       <div className="bg-slate-50 border-b border-slate-100 px-5 py-3 grid grid-cols-[1fr_auto_auto_auto] gap-6 items-center">
         <span className="text-xs font-semibold tracking-widest uppercase text-slate-400">Country</span>
@@ -172,6 +172,7 @@ export function WebinarPipeline({ webinars }: WebinarPipelineProps) {
               <div className="w-24 text-right">
                 <Link
                   href={`/module-b/webinars/${webinar.id}`}
+                  data-tour="webinar-row-action"
                   className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors whitespace-nowrap"
                 >
                   Details →
@@ -183,7 +184,7 @@ export function WebinarPipeline({ webinars }: WebinarPipelineProps) {
       </div>
 
       {/* Legend */}
-      <div className="bg-slate-50/50 border-t border-slate-100 px-5 py-3 flex flex-wrap items-center gap-5">
+      <div className="bg-slate-50/50 border-t border-slate-100 px-5 py-3 flex flex-wrap items-center gap-5" data-tour="webinar-legend">
         <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Legend</span>
         {[
           { dot: 'bg-emerald-500', label: 'Completed' },

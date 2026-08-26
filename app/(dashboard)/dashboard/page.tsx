@@ -170,7 +170,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       {/* ── Greeting ─────────────────────────────────────────────────────── */}
-      <div>
+      <div data-tour="page-header">
         <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">
           Good {getTimeOfDay()}, {profile?.full_name?.split(' ')[0] ?? 'there'}
         </h1>
@@ -180,7 +180,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* ── Module A KPIs ────────────────────────────────────────────────── */}
-      <section>
+      <section data-tour="module-a-kpis">
         <p className="text-xs font-semibold tracking-widest uppercase text-slate-400 mb-3">
           Module A — Zonal Activities
         </p>
@@ -216,7 +216,7 @@ export default async function DashboardPage() {
       </section>
 
       {/* ── Activity Charts ───────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-tour="dashboard-charts">
         {/* Pie: breakdown by type */}
         <Card className="border-slate-100 shadow-sm">
           <CardHeader className="pb-0 pt-5 px-5">
@@ -247,7 +247,7 @@ export default async function DashboardPage() {
 
       {/* ── Zone Analysis (admin) ─────────────────────────────────────────── */}
       {isAdmin && (
-        <section className="space-y-6">
+        <section className="space-y-6" data-tour="zone-analysis">
           {/* Stacked bar: all activity types per zone */}
           <Card className="border-slate-100 shadow-sm">
             <CardHeader className="pb-0 pt-5 px-5">
@@ -320,7 +320,7 @@ export default async function DashboardPage() {
       )}
 
       {/* ── Module B KPIs ────────────────────────────────────────────────── */}
-      <section>
+      <section data-tour="module-b-kpis">
         <p className="text-xs font-semibold tracking-widest uppercase text-slate-400 mb-3">
           Module B — Webinar Tracker
         </p>

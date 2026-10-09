@@ -18,6 +18,7 @@ CREATE TYPE activity_type AS ENUM (
   'new_registration',
   'renewal',
   'facilitation_done',
+  'quota',
   'technology_transfer_agreement',
   'stakeholder_engagement',
   'media_interview',

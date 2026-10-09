@@ -234,6 +234,7 @@ CREATE TYPE activity_type AS ENUM (
   'renewal',
   'facilitation_done',
   'site_visit',
+  'quota',
   'technology_transfer_agreement',
   'stakeholder_engagement',
   'media_interview',
@@ -846,7 +847,7 @@ import { z } from 'zod'
 
 export const activityTypes = [
   'new_registration', 'renewal', 'facilitation_done', 'site_visit',
-  'technology_transfer_agreement', 'stakeholder_engagement',
+  'quota', 'technology_transfer_agreement', 'stakeholder_engagement',
   'media_interview', 'checkup_call', 'iomp_update'
 ] as const
 
@@ -919,7 +920,8 @@ export const ACTIVITY_TYPE_LABELS: Record<string, string> = {
   renewal: 'Renewal',
   facilitation_done: 'Facilitation Done',
   site_visit: 'Site Visit',
-  technology_transfer_agreement: 'Technology Transfer Agreement',
+  quota: 'Quota',
+  technology_transfer_agreement: 'Technology Transfer Agreement (TTA)',
   stakeholder_engagement: 'Stakeholder Engagement',
   media_interview: 'Media Interview',
   checkup_call: 'Check-up Call',

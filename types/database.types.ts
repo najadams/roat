@@ -31,6 +31,7 @@ export type ActivityType =
   // Kept in the generated database union for legacy enum compatibility only.
   // New writes use outreach_promotional after migration 022.
   | 'site_visit'
+  | 'quota'
   | 'technology_transfer_agreement'
   | 'stakeholder_engagement'
   | 'media_interview'
